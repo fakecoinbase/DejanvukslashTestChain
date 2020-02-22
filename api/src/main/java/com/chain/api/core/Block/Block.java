@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -19,8 +20,9 @@ public class Block {
     private String hash;
     private String previousHash;
     private Long timestamp;
-    public List<Transaction> transactions;
-    public String merkleRoot;
+    private List<Transaction> transactions;
+    private String merkleRoot;
+    private Integer difficultyTarget;
 
     public Block() {}
 
@@ -40,6 +42,31 @@ public class Block {
 
     public void generateHash() {
         hash = CryptoUtil.encryptSha256(previousHash + index + timestamp + merkleRoot);
+    }
+
+    public void mineBlock() {
+        this.setTimestamp(new Date().getTime());
+        this.setDifficultyTarget(5);// read difficulty from a central config server
+        String target = new String(new char[this.getDifficultyTarget()]).replace('\0', '0'); // Create a string with difficulty * "0"
+    }
+
+    public static String generateMerkleRoot(ArrayList<Transaction> transactions) {
+        int count = transactions.size();
+        ArrayList<String> previousTreeLayer = new ArrayList<String>();
+        for(Transaction transaction : transactions) {
+            previousTreeLayer.add(transaction.transactionId);
+        }
+        ArrayList<String> treeLayer = previousTreeLayer;
+        while(count > 1) {
+            treeLayer = new ArrayList<String>();
+            for(int i=1; i < previousTreeLayer.size(); i++) {
+                treeLayer.add(applySha256(previousTreeLayer.get(i-1) + previousTreeLayer.get(i)));
+            }
+            count = treeLayer.size();
+            previousTreeLayer = treeLayer;
+        }
+        String merkleRoot = (treeLayer.size() == 1) ? treeLayer.get(0) : "";
+        return merkleRoot;
     }
 
     public static boolean isChainValid(List<Block> blockchain) {
@@ -92,7 +119,7 @@ public class Block {
     }
 
     public static boolean isBlockMined(Block block) {
-        int difficulty = 5;
+        int difficulty = 5; // read dificulty from a central config server
         String hashTarget = new String(new char[difficulty]).replace('\0', '0');
         if(!block.getHash().substring( 0, difficulty).equals(hashTarget)) {
             System.out.println("Block wasn't mined!");
