@@ -1,5 +1,6 @@
 package com.chain.api.core.Transaction;
 
+import com.chain.api.core.Block.Block;
 import com.chain.util.crypto.CryptoUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 
@@ -25,9 +26,9 @@ public class TransactionUtil {
      * @param sender the creator of the transaction
      * @param inputs transaction inputs created by the user
      * @param TXID the data used to sign the transaction
+     * @param userUTXOs either get them from local or read the owner's current UTXO's from the db
      */
-    public static boolean lockTransactionInputs(PrivateKey sender, List<TransactionInput> inputs, String TXID) {
-        List<UTXO> userUTXOs = null; // read the owner's current UTXO's from the db
+    public static boolean lockTransactionInputs(PrivateKey sender, List<TransactionInput> inputs, String TXID, List<UTXO> userUTXOs) {
         for(int i = 0; i < inputs.size(); i++) {
             TransactionInput txi = inputs.get(i);
             UTXO tempUtxo = userUTXOs.stream().filter(utxo -> utxo.getPreviousTx().equals(txi.getPreviousTx()) && utxo.getIndex() == txi.getIndex()).findAny().orElse(null);
@@ -74,7 +75,7 @@ public class TransactionUtil {
      * Generate's the transaction id TXID which is the SHA256 encrypted value of the inputs,outputs,sender,receiver,value and a random nonce to avoid identical hashes
      */
     public static String generateTransactionId(List<TransactionInput> inputs, List<TransactionOutput> outputs, PublicKey sender, PublicKey receiver, float value) {
-        String txIn = inputs.stream().map( TXI -> TXI.getIndex() + TXI.getPreviousTx()).reduce("", (subtotal, element) -> subtotal + element);
+        String txIn = inputs.stream().map( TXI -> TXI.getPreviousTx() + TXI.getIndex()).reduce("", (subtotal, element) -> subtotal + element);
         String txOut = outputs.stream().map( TXO -> TXO.getTo() + Float.toString(TXO.getValue())).reduce("", (subtotal, element) -> subtotal + element);
         int nonce =  new Random().nextInt(1000);
         String TXID = CryptoUtil.encryptSha256(
@@ -147,6 +148,43 @@ public class TransactionUtil {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * find the specific TXO refferenced by the TI in the blockchain
+     * @param TI
+     * @param blockchain
+     * @return TXO or null
+     */
+    public static TransactionOutput findTransactionOutput(TransactionInput TI, List<Block> blockchain) {
+        // Find the transaction the TXI refers to
+        Transaction transaction = findTransaction(TI.getPreviousTx(), blockchain);
+        if(transaction == null) {
+            System.out.println("Transaction: " + TI + " not found!");
+            return null;
+        }
+        List<TransactionOutput> txos = transaction.getOutputs();
+        if(TI.getIndex() >= txos.size()) {
+            System.out.println("Invalid output index!");
+            return null;
+        }
+        TransactionOutput txo = txos.get(TI.getIndex());
+        return txo;
+    }
+
+    /**
+     * Find the transaction with the specific transaction id in the blockchain
+     * @param TXID
+     * @param blockchain
+     * @return Transaction or null
+     */
+    public static Transaction findTransaction(String TXID, List<Block> blockchain) {
+        for(int i = 0; i < blockchain.size(); i++) {
+            Block block = blockchain.get(i);
+            Transaction trans = block.getTransactions().stream().filter(transaction -> transaction.getTXID().equals(TXID)).findAny().orElse(null);
+            if(trans != null) return trans;
+        }
+        return null;
+    }
+
     public static boolean verifyTransaction(Transaction transaction) {
         // Check if the transaction was modified
         if(!transaction.getTXID().equals(
@@ -160,6 +198,11 @@ public class TransactionUtil {
             System.out.println("");
             return false;
         }
+
+        // the value of TXI's must be equivalent to the value of TXO's
+        float txInTotalValue = transaction.getInputs().stream().map(input -> {
+
+        }).reduce(0, (a,b) -> a+b);
 
         return true;
     }

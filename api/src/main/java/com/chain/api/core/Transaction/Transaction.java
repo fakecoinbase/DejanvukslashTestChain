@@ -35,6 +35,7 @@ public class Transaction {
     private List<TransactionOutput> outputs = new ArrayList<TransactionOutput>();
 
 
+
     // Constructor:
     public Transaction(PublicKey from, PublicKey to, float value,  ArrayList<TransactionInput> inputs, ArrayList<TransactionOutput> outputs) {
         this.sender = from;

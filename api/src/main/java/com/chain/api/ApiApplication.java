@@ -9,7 +9,6 @@ import java.security.Security;
 public class ApiApplication {
 
     public static void main(String[] args) {
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         SpringApplication.run(ApiApplication.class, args);
     }
 
