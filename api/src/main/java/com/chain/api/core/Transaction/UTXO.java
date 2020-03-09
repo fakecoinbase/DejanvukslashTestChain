@@ -9,10 +9,11 @@ import java.security.PublicKey;
 @Setter
 @ToString
 @EqualsAndHashCode
+@NoArgsConstructor
 @AllArgsConstructor
 //keep a database of UTXO so we don't have to scan the blockchain everytime we make a transaction
 public class UTXO {
-    private String previousTx;
+    private String previousTx; // TXID of the transaction it refers to
     private Integer index;
     private PublicKey owner; // owner of the coins
     private float value;

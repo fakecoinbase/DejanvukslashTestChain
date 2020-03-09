@@ -7,12 +7,14 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import org.bouncycastle.math.ec.ECPoint;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 public class CryptoUtil {
     /**
      * Encrypts the data
-     * @param data
+     * @param encodedhash
      * @return encrypted SHA-256 hex data
      */
 
@@ -99,7 +101,7 @@ public class CryptoUtil {
      */
     public static PublicKey DerivePubKeyFromPrivKey(BCECPrivateKey definingKey) throws NoSuchAlgorithmException, InvalidKeySpecException {
 
-        KeyFactory keyFactory = KeyFactory.getInstance("EC", Security.getProvider("BC"));
+        KeyFactory keyFactory = KeyFactory.getInstance("ECDSA", Security.getProvider("BC"));
 
         BigInteger d = definingKey.getD();
         org.bouncycastle.jce.spec.ECParameterSpec ecSpec =
@@ -112,7 +114,42 @@ public class CryptoUtil {
         return publicKeyGenerated;
     }
 
+    /**
+     * Returns the PublicKey as a String
+     * @param key
+     * @return
+     */
     public static String getStringFromKey(Key key) {
         return Base64.getEncoder().encodeToString(key.getEncoded());
+    }
+
+    /**
+     * Creates a PublicKey from a public key in a string format
+     * @param key the public key
+     * @return
+     * @throws NoSuchProviderException
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeySpecException
+     */
+    public static PublicKey getPublicKeyFromString(String key) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException {
+        byte[] bytePublicKey = Base64.getDecoder().decode(key);
+        KeyFactory factory = KeyFactory.getInstance("ECDSA", "BC");
+        PublicKey publicKey = factory.generatePublic(new X509EncodedKeySpec(bytePublicKey));
+        return publicKey;
+    }
+
+    /**
+     * Creates a PrivateKey from a public key in a string format
+     * @param key the private key
+     * @return
+     * @throws NoSuchProviderException
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeySpecException
+     */
+    public static PrivateKey getPrivateKeyFromString(String key) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException {
+        byte[] bytePrivateKey = Base64.getDecoder().decode(key);
+        KeyFactory factory = KeyFactory.getInstance("ECDSA", "BC");
+        PrivateKey privateKey = factory.generatePrivate(new PKCS8EncodedKeySpec(bytePrivateKey));
+        return privateKey;
     }
 }

@@ -16,7 +16,7 @@ public interface BlockService {
     @PostMapping(value = "/block", consumes = "application/json", produces = "application/json")
     Block addBlock(@RequestBody Block body);
 
-    @GetMapping(produces = "application/json")
+    @GetMapping(value = "/block" ,produces = "application/json")
     Flux<Block> getBlocks();
 
     @GetMapping(value = "/start")

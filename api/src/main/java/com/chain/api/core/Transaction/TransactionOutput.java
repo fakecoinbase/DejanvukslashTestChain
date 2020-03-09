@@ -8,6 +8,8 @@ import java.security.PublicKey;
 @Setter
 @ToString
 @EqualsAndHashCode
+@NoArgsConstructor
+@AllArgsConstructor
 public class TransactionOutput {
     private PublicKey to; // the address to which the coins will be locked to
     private float value;
