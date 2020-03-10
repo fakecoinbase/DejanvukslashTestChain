@@ -309,11 +309,16 @@ public class TransactionUtil {
                 outputs.add(new TransactionOutput(fromKey, leftoverValue));
 
             // remove the spent UTXO's used as inputs
-            // we don't have to filter as the UTXO's are consumed in order
-
-            while(i > 0) {
-                utxos.remove(0);
-                i--;
+            for(int j = 0; j < utxos.size();j++) {
+                UTXO currentUTXO = utxos.get(j);
+                for(int k = 0; k < utxostoBeRemoved.size(); k++) {
+                    UTXO consumedUTXO = utxostoBeRemoved.get(k);
+                    if(currentUTXO.getPreviousTx() == consumedUTXO.getPreviousTx() && currentUTXO.getIndex() == consumedUTXO.getIndex()) {
+                        utxos.remove(j);
+                        j--;
+                        break;
+                    }
+                }
             }
 
             // create the transaction and generate transaction ID
