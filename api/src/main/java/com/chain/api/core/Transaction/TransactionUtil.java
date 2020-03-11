@@ -1,7 +1,7 @@
 package com.chain.api.core.Transaction;
 
 import com.chain.api.core.Block.Block;
-import com.chain.util.crypto.CryptoUtil;
+import com.chain.api.core.Crypto.CryptoUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 
 import java.security.NoSuchAlgorithmException;

@@ -1,7 +1,7 @@
 package com.chain.api.core.Block;
 
+import com.chain.api.core.Crypto.CryptoUtil;
 import com.chain.api.core.Transaction.Transaction;
-import com.chain.util.crypto.CryptoUtil;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
