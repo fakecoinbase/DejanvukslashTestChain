@@ -73,19 +73,19 @@ public class TransactionUtil {
     }
 
     /**
+     * @param blockHeight index in the blockchain the block is found
      * Generate's the transaction id TXID which is the SHA256 encrypted value of the inputs,outputs,sender,receiver,value and a random nonce to avoid identical hashes
      */
-    public static String generateTransactionId(List<TransactionInput> inputs, List<TransactionOutput> outputs, PublicKey sender, PublicKey receiver, float value) {
+    public static String generateTransactionId(List<TransactionInput> inputs, List<TransactionOutput> outputs, String sender, String receiver, float value, Integer blockHeight) {
         String txIn = inputs.stream().map( TXI -> TXI.getPreviousTx() + TXI.getIndex()).reduce("", (subtotal, element) -> subtotal + element);
         String txOut = outputs.stream().map( TXO -> TXO.getTo() + Float.toString(TXO.getValue())).reduce("", (subtotal, element) -> subtotal + element);
-        int nonce =  new Random().nextInt(1000);
         String TXID = CryptoUtil.encryptSha256(
-                CryptoUtil.getStringFromKey(sender) +
-                        CryptoUtil.getStringFromKey(receiver) +
+                   sender +
+                        receiver +
                         Float.toString(value) +
                         txIn +
                         txOut +
-                        Integer.toString(nonce));
+                        Integer.toString(blockHeight));
         return TXID;
     }
 
@@ -186,10 +186,15 @@ public class TransactionUtil {
         return null;
     }
 
-    public static boolean verifyTransaction(Transaction transaction,List<Block> blockchain) {
+    public static boolean verifyTransaction(Transaction transaction,List<Block> blockchain, Integer blockHeight) {
         // Check if the transaction was modified
         if(!transaction.getTXID().equals(
-                generateTransactionId(transaction.getInputs(), transaction.getOutputs(), transaction.getSender(), transaction.getReceiver(), transaction.getValue()))) {
+                generateTransactionId(transaction.getInputs(),
+                        transaction.getOutputs(),
+                        CryptoUtil.getStringFromKey(transaction.getSender()),
+                        CryptoUtil.getStringFromKey(transaction.getReceiver()),
+                        transaction.getValue(),
+                        blockHeight))) {
             System.out.println("Transaction has an invalid id!");
             return false;
         }
@@ -216,17 +221,23 @@ public class TransactionUtil {
         return true;
     }
 
-    public static boolean verifyCoinbaseTransaction(Transaction coinbasetransaction,List<Block> blockchain) {
+    public static boolean verifyCoinbaseTransaction(Transaction coinbasetransaction,Integer blockHeight) {
         // Check if the coinbase transaction was modified
         if(!coinbasetransaction.getTXID().equals(
-                generateTransactionId(coinbasetransaction.getInputs(), coinbasetransaction.getOutputs(), coinbasetransaction.getSender(), coinbasetransaction.getReceiver(), coinbasetransaction.getValue()))) {
+                generateTransactionId(
+                        coinbasetransaction.getInputs(),
+                        coinbasetransaction.getOutputs(),
+                        (coinbasetransaction.getSender() == null) ? "" : CryptoUtil.getStringFromKey(coinbasetransaction.getSender()),
+                        CryptoUtil.getStringFromKey(coinbasetransaction.getReceiver()),
+                        coinbasetransaction.getValue(),
+                        blockHeight))) {
             System.out.println("Coinbase transaction has an invalid TXID!");
             return false;
         }
 
         // Reward transaction has no inputs
         if(!coinbasetransaction.getInputs().isEmpty()) {
-            System.out.println("Coinbase transaction has no inputs!");
+            System.out.println("Coinbase transaction should have no inputs!");
             return false;
         }
 
@@ -263,14 +274,64 @@ public class TransactionUtil {
     }
 
     /**
+     * Create a Coinbase transaction with no inputs
+     * @param to owner of the miner
+     * @param value constant
+     * @param utxos
+     * @return Transaction or null if the creation failed
+     */
+    public static Transaction createCoinbaseTransaction(String to, float value, List<UTXO> utxos, Integer blockHeight) {
+        Transaction transaction = null;
+        try {
+            PublicKey toKey = CryptoUtil.getPublicKeyFromString(to);
+
+            // No inputs, so an empty list
+            List<TransactionInput> inputs = new ArrayList<>();
+
+            // add Transaction Output
+            List<TransactionOutput> outputs = new ArrayList<>();
+            outputs.add(new TransactionOutput(CryptoUtil.getPublicKeyFromString(to), value));
+
+            transaction = new Transaction(
+                    1,
+                    (short) 1,
+                    generateTransactionId(inputs,outputs,"",to,value, blockHeight),
+                    null,
+                    toKey,
+                    value,
+                    inputs,
+                    outputs
+            );
+
+            // add the new TXO's in UTXO's after we get txid
+
+            for(int i = 0; i < outputs.size(); i++) {
+                TransactionOutput tempTo = outputs.get(i);
+                utxos.add(new UTXO(transaction.getTXID(),i,tempTo.getTo(),tempTo.getValue()));
+            }
+
+            return transaction;
+
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+        return transaction;
+    }
+
+    /**
      *
      * @param from private key of sender
      * @param to public key of receiver
      * @param value
      * @param utxos
+     * @param blockHeight the index of the block from were the transaction is found
      * @return Transaction or null if the creation failed
      */
-    public static Transaction createTransaction(String from, String to, float value, List<UTXO> utxos) {
+    public static Transaction createTransaction(String from, String to, float value, List<UTXO> utxos, Integer blockHeight) {
         Transaction transaction = null;
         try {
             PublicKey fromKey = CryptoUtil.DerivePubKeyFromPrivKey((BCECPrivateKey) CryptoUtil.getPrivateKeyFromString(from));
@@ -325,7 +386,7 @@ public class TransactionUtil {
 
             transaction = new Transaction(1,
                     (short) 1,
-                    generateTransactionId(inputs,outputs,fromKey,toKey,value),
+                    generateTransactionId(inputs,outputs,CryptoUtil.getStringFromKey(fromKey),CryptoUtil.getStringFromKey(toKey),value, blockHeight),
                     fromKey,
                     toKey,
                     value,
