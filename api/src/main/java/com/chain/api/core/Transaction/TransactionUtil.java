@@ -32,13 +32,14 @@ public class TransactionUtil {
     public static boolean lockTransactionInputs(PrivateKey sender, List<TransactionInput> inputs, String TXID, List<UTXO> userUTXOs) {
         for(int i = 0; i < inputs.size(); i++) {
             TransactionInput txi = inputs.get(i);
+            // find the UTXO it refferences
             UTXO tempUtxo = userUTXOs.stream().filter(utxo -> utxo.getPreviousTx().equals(txi.getPreviousTx()) && utxo.getIndex() == txi.getIndex()).findAny().orElse(null);
             if(tempUtxo == null) {
                 System.out.println("Input doesn't match output!");
                 return false;
             }
             try {
-                if(CryptoUtil.getStringFromKey(tempUtxo.getOwner()) != CryptoUtil.getStringFromKey(CryptoUtil.DerivePubKeyFromPrivKey((BCECPrivateKey) sender))) {
+                if(!CryptoUtil.getStringFromKey(tempUtxo.getOwner()).equals(CryptoUtil.getStringFromKey(CryptoUtil.DerivePubKeyFromPrivKey((BCECPrivateKey) sender)))) {
                     System.out.println("The owner is different!");
                     return false;
                 }
@@ -64,8 +65,8 @@ public class TransactionUtil {
     public static boolean verifyTransactionInputs(PublicKey owner,List<TransactionInput> inputs, String TXID) {
         for(int i = 0; i < inputs.size(); i++) {
             TransactionInput txi = inputs.get(i);
-            if(CryptoUtil.verifyECDSASig(owner, TXID, CryptoUtil.hexStringToByteArray(txi.getSignature()))) {
-                System.out.println("The transaction input with index: " + txi.getIndex() + " was modified!");
+            if(!CryptoUtil.verifyECDSASig(owner, TXID, CryptoUtil.hexStringToByteArray(txi.getSignature()))) {
+                System.out.println("The transaction input with index: " + i + " was modified!");
                 return false;
             }
         }
@@ -259,7 +260,7 @@ public class TransactionUtil {
      * @return user's UTXO's
      */
     public static List<UTXO> getUserUtxos(PublicKey owner,List<UTXO> utxos) {
-        return utxos.stream().filter(utxo -> utxo.getOwner() == owner).collect(Collectors.toList());
+        return utxos.stream().filter(utxo -> CryptoUtil.getStringFromKey(utxo.getOwner()).equals(CryptoUtil.getStringFromKey(owner))).collect(Collectors.toList());
     }
 
     /**
@@ -331,89 +332,79 @@ public class TransactionUtil {
      * @param blockHeight the index of the block from were the transaction is found
      * @return Transaction or null if the creation failed
      */
-    public static Transaction createTransaction(String from, String to, float value, List<UTXO> utxos, Integer blockHeight) {
+    public static Transaction createTransaction(String from, String to, float value, List<UTXO> utxos, Integer blockHeight) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
         Transaction transaction = null;
-        try {
-            PublicKey fromKey = CryptoUtil.DerivePubKeyFromPrivKey((BCECPrivateKey) CryptoUtil.getPrivateKeyFromString(from));
-            PublicKey toKey = CryptoUtil.getPublicKeyFromString(to);
+        PublicKey fromKey = CryptoUtil.DerivePubKeyFromPrivKey((BCECPrivateKey) CryptoUtil.getPrivateKeyFromString(from));
+        PublicKey toKey = CryptoUtil.getPublicKeyFromString(to);
 
-            // get user's specific UTXO
-            List<UTXO> usersUtxos = getUserUtxos(fromKey, utxos);
+        // get user's specific UTXO
+        List<UTXO> usersUtxos = getUserUtxos(fromKey, utxos);
 
-            // find UTXO's that add up to >= value
-            List<UTXO> utxostoBeRemoved = new ArrayList<>();
-            float utxosToBeRemovedValue = 0;
-            int i = 0;
-            for(; i < usersUtxos.size(); i++) {
-                UTXO tempUtxo = usersUtxos.get(i);
-                utxostoBeRemoved.add(tempUtxo);
-                utxosToBeRemovedValue += tempUtxo.getValue();
-                if(utxosToBeRemovedValue >= value) break;
-            }
+        // find UTXO's that add up to >= value
+        List<UTXO> utxostoBeRemoved = new ArrayList<>();
+        float utxosToBeRemovedValue = 0;
+        int i = 0;
+        for(; i < usersUtxos.size(); i++) {
+            UTXO tempUtxo = usersUtxos.get(i);
+            utxostoBeRemoved.add(tempUtxo);
+            utxosToBeRemovedValue += tempUtxo.getValue();
+            if(utxosToBeRemovedValue >= value) break;
+        }
 
-            // verify if sender has enough funds to send
-            if(utxosToBeRemovedValue < value) throw new RuntimeException();
+        // verify if sender has enough funds to send
+        if(utxosToBeRemovedValue < value) throw new RuntimeException("Sender does not have enough funds");
 
-            // create the TXI's
-            List<TransactionInput> inputs = utxostoBeRemoved.stream().map(utxo -> new TransactionInput(utxo.getPreviousTx(),utxo.getIndex(),"")).collect(Collectors.toList());
+        // create the TXI's
+        List<TransactionInput> inputs = utxostoBeRemoved.stream().map(utxo -> new TransactionInput(utxo.getPreviousTx(),utxo.getIndex(),"")).collect(Collectors.toList());
 
-            // create the new TXO's
-            List<TransactionOutput> outputs = new ArrayList<>();
-            outputs.add(new TransactionOutput(toKey,value));
+        // create the new TXO's
+        List<TransactionOutput> outputs = new ArrayList<>();
+        outputs.add(new TransactionOutput(toKey,value));
 
-            final float fee = 0f;
-            float leftoverValue = utxosToBeRemovedValue - value - fee; // send back to owner leftover coins minus the fee
+        final float fee = 0f;
+        float leftoverValue = utxosToBeRemovedValue - value - fee; // send back to owner leftover coins minus the fee
 
-            //output.add(new TransactionOutput(fromKey, fee)); // the fee
+        //output.add(new TransactionOutput(fromKey, fee)); // the fee
 
-            if(leftoverValue > 0)
-                outputs.add(new TransactionOutput(fromKey, leftoverValue));
+        if(leftoverValue > 0)
+            outputs.add(new TransactionOutput(fromKey, leftoverValue));
 
-            // remove the spent UTXO's used as inputs
-            for(int j = 0; j < utxos.size();j++) {
-                UTXO currentUTXO = utxos.get(j);
-                for(int k = 0; k < utxostoBeRemoved.size(); k++) {
-                    UTXO consumedUTXO = utxostoBeRemoved.get(k);
-                    if(currentUTXO.getPreviousTx() == consumedUTXO.getPreviousTx() && currentUTXO.getIndex() == consumedUTXO.getIndex()) {
-                        utxos.remove(j);
-                        j--;
-                        break;
-                    }
+        // create the transaction and generate transaction ID
+
+        transaction = new Transaction(1,
+                (short) 1,
+                generateTransactionId(inputs,outputs,CryptoUtil.getStringFromKey(fromKey),CryptoUtil.getStringFromKey(toKey),value, blockHeight),
+                fromKey,
+                toKey,
+                value,
+                inputs,
+                outputs);
+
+        // add the new TXO's in UTXO's after we got TXID
+
+        for(i = 0; i < outputs.size(); i++) {
+            TransactionOutput tempTo = outputs.get(i);
+            utxos.add(new UTXO(transaction.getTXID(),i,tempTo.getTo(),tempTo.getValue()));
+        }
+
+        // sign TXI's after adding the new UTXO
+        lockTransactionInputs((BCECPrivateKey) CryptoUtil.getPrivateKeyFromString(from),inputs,transaction.getTXID(),utxos);
+
+        // remove the spent UTXO's used as inputs AFTER locking else locking check will fail since the referenced UTXO's by inputs will not be found!
+        // OR search the inputs refferences in the blockchain
+        for(int j = 0; j < utxos.size();j++) {
+            UTXO currentUTXO = utxos.get(j);
+            for(int k = 0; k < utxostoBeRemoved.size(); k++) {
+                UTXO consumedUTXO = utxostoBeRemoved.get(k);
+                if(currentUTXO.getPreviousTx() == consumedUTXO.getPreviousTx() && currentUTXO.getIndex() == consumedUTXO.getIndex()) {
+                    utxos.remove(j);
+                    j--;
+                    break;
                 }
             }
-
-            // create the transaction and generate transaction ID
-
-            transaction = new Transaction(1,
-                    (short) 1,
-                    generateTransactionId(inputs,outputs,CryptoUtil.getStringFromKey(fromKey),CryptoUtil.getStringFromKey(toKey),value, blockHeight),
-                    fromKey,
-                    toKey,
-                    value,
-                    inputs,
-                    outputs);
-
-            // add the new TXO's in UTXO's after we got TXID
-
-            for(i = 0; i < outputs.size(); i++) {
-                TransactionOutput tempTo = outputs.get(i);
-                utxos.add(new UTXO(transaction.getTXID(),i,tempTo.getTo(),tempTo.getValue()));
-            }
-
-            // sign TXI's after adding the new UTXO
-            lockTransactionInputs((BCECPrivateKey) CryptoUtil.getPrivateKeyFromString(from),inputs,transaction.getTXID(),utxos);
-
-            // return the transaction
-            return transaction;
-        } catch (NoSuchProviderException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+
+        // return the transaction
         return transaction;
     }
 
