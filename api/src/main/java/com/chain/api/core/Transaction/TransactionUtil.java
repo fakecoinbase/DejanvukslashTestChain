@@ -98,56 +98,57 @@ public class TransactionUtil {
      * @param currentUTXOs the UTXO's of the blockchain prior to the new received block
      * @return the new list of unspent transaction outputs
      */
-    public static List<UTXO> updateUtxos(List<Transaction> transactions, List<UTXO> currentUTXOs) {
-        // Retrieve all the UTXO's from the received block
-        List<UTXO> blocksUTXOs = new ArrayList<>(); // the UTXO's from the received block
+    public static void updateUtxos(List<Transaction> transactions, List<UTXO> currentUTXOs) {
+        // Retrieve all the TXO's from the received block as UTXO
+        List<UTXO> blocksTXOs = new ArrayList<>(); // the UTXO's from the received block
         transactions.stream().forEach(transaction -> {
             int i = 0;
             List<TransactionOutput> outputs = transaction.getOutputs();
             while(i < outputs.size()) {
                 TransactionOutput to = outputs.get(i);
-                blocksUTXOs.add(new UTXO(transaction.getTXID(), i++, to.getTo(), to.getValue()));
+                blocksTXOs.add(new UTXO(transaction.getTXID(), i++, to.getTo(), to.getValue()));
             }
         });
 
         // check which currentUTXOs and blocksUTXOs are consumed by the transactions from the received block
 
-        // 1.get all the new block's TXI's
+        // 1.get all the new spent TXO's referenced by the new TXI's
         List<UTXO> consTXOs =  new ArrayList<>();
         transactions.stream().forEach(transaction -> {
             transaction.getInputs().stream().forEach(input -> {
                 consTXOs.add(new UTXO(input.getPreviousTx(),input.getIndex(), null, 0));});});
 
         // 2.remove the consumed UTXO's from the currentUTXO's
-        List<UTXO> returnUTXOs = currentUTXOs.stream().filter(utxo -> {
-            for(int i = 0; i < consTXOs.size(); i++) {
-                UTXO spentUTXO = consTXOs.get(i);
-                if(utxo.getPreviousTx() == spentUTXO.getPreviousTx() && utxo.getIndex() == spentUTXO.getIndex())
-                    return false;
+        for(int i = 0; i < currentUTXOs.size(); i++) {
+            UTXO utxo = currentUTXOs.get(i);
+            for(int j = 0; j < consTXOs.size(); j++) {
+                UTXO spentUTXO = consTXOs.get(j);
+                if(utxo.getPreviousTx() == spentUTXO.getPreviousTx() && utxo.getIndex() == spentUTXO.getIndex()) {
+                    currentUTXOs.remove(i);
+                    i--;
+                    consTXOs.remove(j); // an input can only reference a TXO once
+                    break;
+                }
             }
-            return true;
-        }).collect(Collectors.toList());
+        }
 
-        // 3. remove the consumed UTXO's from the blocksUTXOs
-        /*
-        List<UTXO> returnBlocksUTXOs = blocksUTXOs.stream().filter(utxo -> {
-            for(int i = 0; i < consTXOs.size(); i++) {
-                UTXO spentUTXO = consTXOs.get(i);
-                if(utxo.getPreviousTx() == spentUTXO.getPreviousTx() && utxo.getIndex() == spentUTXO.getIndex())
-                    return false;
+        // 3. remove the consumed TXO's from the blocksTXOs
+
+        for(int i = 0; i < blocksTXOs.size(); i++) {
+            UTXO utxo = blocksTXOs.get(i);
+            for(int j = 0; j < consTXOs.size(); j++) {
+                UTXO spentUTXO = consTXOs.get(j);
+                if(utxo.getPreviousTx() == spentUTXO.getPreviousTx() && utxo.getIndex() == spentUTXO.getIndex()) {
+                    blocksTXOs.remove(i);
+                    i--;
+                    consTXOs.remove(j);
+                    break;
+                }
             }
-            return true;
-        }).collect(Collectors.toList());
+        }
 
-         */
-
-        // 4.merge 2 and 3 lists and return them
-        //returnUTXOs.addAll(returnBlocksUTXOs);
-        //return returnUTXOs;
-
-        return Stream.of(returnUTXOs,blocksUTXOs)
-                .flatMap(x -> x.stream())
-                .collect(Collectors.toList());
+        // 4. add the new UTXO's blocksTXO's to the currentUTXOs
+        currentUTXOs.addAll(blocksTXOs);
     }
 
     /**
@@ -343,8 +344,7 @@ public class TransactionUtil {
         // find UTXO's that add up to >= value
         List<UTXO> utxostoBeRemoved = new ArrayList<>();
         float utxosToBeRemovedValue = 0;
-        int i = 0;
-        for(; i < usersUtxos.size(); i++) {
+        for(int i = 0; i < usersUtxos.size(); i++) {
             UTXO tempUtxo = usersUtxos.get(i);
             utxostoBeRemoved.add(tempUtxo);
             utxosToBeRemovedValue += tempUtxo.getValue();
@@ -382,7 +382,7 @@ public class TransactionUtil {
 
         // add the new TXO's in UTXO's after we got TXID
 
-        for(i = 0; i < outputs.size(); i++) {
+        for(int i = 0; i < outputs.size(); i++) {
             TransactionOutput tempTo = outputs.get(i);
             utxos.add(new UTXO(transaction.getTXID(),i,tempTo.getTo(),tempTo.getValue()));
         }
@@ -392,13 +392,13 @@ public class TransactionUtil {
 
         // remove the spent UTXO's used as inputs AFTER locking else locking check will fail since the referenced UTXO's by inputs will not be found!
         // OR search the inputs refferences in the blockchain
-        for(int j = 0; j < utxos.size();j++) {
-            UTXO currentUTXO = utxos.get(j);
+        for(int i = 0; i < utxos.size();i++) {
+            UTXO currentUTXO = utxos.get(i);
             for(int k = 0; k < utxostoBeRemoved.size(); k++) {
                 UTXO consumedUTXO = utxostoBeRemoved.get(k);
                 if(currentUTXO.getPreviousTx() == consumedUTXO.getPreviousTx() && currentUTXO.getIndex() == consumedUTXO.getIndex()) {
-                    utxos.remove(j);
-                    j--;
+                    utxos.remove(i);
+                    i--;
                     break;
                 }
             }
