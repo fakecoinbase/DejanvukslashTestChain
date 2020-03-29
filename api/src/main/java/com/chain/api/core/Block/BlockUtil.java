@@ -5,6 +5,17 @@ import com.chain.api.core.Transaction.Transaction;
 import java.util.List;
 
 public class BlockUtil {
+
+    public static boolean isBlockValid() {
+        return true;
+    }
+
+    /**
+     * Whenever we receive a new block from a peer we must check the unconfirmed transactions
+     */
+    public static void updateUnconfirmedTransactions() {
+    }
+
     public static boolean isChainValid(List<Block> blockchain) {
         Block currBlock;
         Block prevBlock;

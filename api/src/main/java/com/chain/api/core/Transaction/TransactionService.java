@@ -8,8 +8,5 @@ import reactor.core.publisher.Mono;
 
 public interface TransactionService {
     @PostMapping(value = "/transaction", consumes = "application/json", produces = "application/json")
-    Mono<Transaction> createTransaction(@RequestBody TransactionPayload payload);
-
-    @GetMapping(value = "/wallet/{walletPublicKey}", produces = "application/json")
-    Mono<String> getUsersBalance(@PathVariable String publicKey);
+    Transaction createTransaction(@RequestBody TransactionPayload payload);
 }

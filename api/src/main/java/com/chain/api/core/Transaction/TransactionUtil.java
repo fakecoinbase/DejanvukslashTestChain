@@ -152,6 +152,62 @@ public class TransactionUtil {
     }
 
     /**
+     *
+     * update's the internal list and database of UTXO's
+     * used whenever a new transaction is received from a peer
+     * @param transaction
+     * @param currentUTXOs the UTXO's of the blockchain prior to the new received block
+     * @return the new list of unspent transaction outputs
+     */
+    public static void updateUtxos(Transaction transaction, List<UTXO> currentUTXOs) {
+        // Retrieve all the TXO's from the received transaction as UTXO
+        List<UTXO> blocksTXOs = new ArrayList<>();
+        List<TransactionOutput> outputs = transaction.getOutputs();
+        for(int i = 0;i < outputs.size(); ) {
+            TransactionOutput to = outputs.get(i);
+            blocksTXOs.add(new UTXO(transaction.getTXID(), i++, to.getTo(), to.getValue()));
+        }
+
+        // check which currentUTXOs and blocksUTXOs are consumed by the received transaction
+
+        // 1.get all the new spent TXO's referenced by the new TXI's
+        List<UTXO> consTXOs =  new ArrayList<>();
+        transaction.getInputs().stream().forEach(input -> { consTXOs.add(new UTXO(input.getPreviousTx(),input.getIndex(), null, 0));});
+
+        // 2.remove the consumed UTXO's from the currentUTXO's
+        for(int i = 0; i < currentUTXOs.size(); i++) {
+            UTXO utxo = currentUTXOs.get(i);
+            for(int j = 0; j < consTXOs.size(); j++) {
+                UTXO spentUTXO = consTXOs.get(j);
+                if(utxo.getPreviousTx() == spentUTXO.getPreviousTx() && utxo.getIndex() == spentUTXO.getIndex()) {
+                    currentUTXOs.remove(i);
+                    i--;
+                    consTXOs.remove(j); // an input can only reference a TXO once
+                    break;
+                }
+            }
+        }
+
+        // 3. remove the consumed TXO's from the blocksTXOs
+
+        for(int i = 0; i < blocksTXOs.size(); i++) {
+            UTXO utxo = blocksTXOs.get(i);
+            for(int j = 0; j < consTXOs.size(); j++) {
+                UTXO spentUTXO = consTXOs.get(j);
+                if(utxo.getPreviousTx() == spentUTXO.getPreviousTx() && utxo.getIndex() == spentUTXO.getIndex()) {
+                    blocksTXOs.remove(i);
+                    i--;
+                    consTXOs.remove(j);
+                    break;
+                }
+            }
+        }
+
+        // 4. add the new UTXO's blocksTXO's to the currentUTXOs
+        currentUTXOs.addAll(blocksTXOs);
+    }
+
+    /**
      * find the specific TXO refferenced by the TI in the blockchain
      * @param TI
      * @param blockchain
@@ -266,11 +322,10 @@ public class TransactionUtil {
 
     /**
      * Search through the UTXO's for the transactions with the receiver publicKey
-     * @param publicKey
      * @param utxos user's utxos
      * @return
      */
-    public static float getUsersBalance(String publicKey, List<UTXO> utxos) {
+    public static float getUsersBalance(List<UTXO> utxos) {
         float value = utxos.stream().map(utxo -> utxo.getValue()).reduce(0f, (a,b) -> a+b);
         return value;
     }

@@ -11,5 +11,5 @@ import lombok.*;
 public class TransactionPayload {
     private String from;
     private String to;
-    private String value;
+    private float value;
 }
