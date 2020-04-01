@@ -43,6 +43,9 @@ public class ListenThread implements Runnable {
 
                 //  Add it to our list of known peers
                 vNodes.add(peer);
+
+                // ask the new peer for his list of peers
+
             } catch (IOException e) {
                 // log "Error accepting peer!";
                 e.printStackTrace();
