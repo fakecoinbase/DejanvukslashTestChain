@@ -2,6 +2,7 @@ package com.chain.api.core.Block;
 
 import com.chain.api.core.Crypto.CryptoUtil;
 import com.chain.api.core.Transaction.Transaction;
+import com.chain.api.core.Transaction.TransactionInput;
 import com.chain.api.core.Transaction.TransactionUtil;
 import com.chain.api.core.Transaction.UTXO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,12 +17,6 @@ public class BlockUtil {
 
     public static boolean isBlockValid() {
         return true;
-    }
-
-    /**
-     * Whenever we receive a new block from a peer we must check the unconfirmed transactions
-     */
-    public static void updateUnconfirmedTransactions() {
     }
 
     public static boolean isChainValid(List<Block> blockchain) {
@@ -118,7 +113,7 @@ public class BlockUtil {
         block.setHash(CryptoUtil.encryptSha256(block.getPreviousHash()
                 + block.getIndex()
                 + block.getTimestamp()
-                //+ block.getMerkleRoot()
+                + block.getMerkleRoot()
                 + block.getNonce()));
     }
 
@@ -127,30 +122,55 @@ public class BlockUtil {
         String target = new String(new char[block.getDifficultyTarget()]).replace('\0', '0'); // Create a string with difficulty * "0"
         do {
             generateHash(block);
+            if(block.getNonce() >= Integer.MAX_VALUE) {
+                // Change the Coinbase transaction's nonce
+                Transaction coinbaseTransaction = block.getTransactions().get(0);
+                TransactionInput coinbase = coinbaseTransaction.getInputs().get(0);
+                coinbase.increaseNonce();
+                // Recalculate the TXID of the coinbase transaction
+                String coinbaseTxId = TransactionUtil.generateTransactionId(
+                        coinbaseTransaction.getInputs(),
+                        coinbaseTransaction.getOutputs(),
+                        "",
+                        CryptoUtil.getStringFromKey(coinbaseTransaction.getReceiver()),
+                        coinbaseTransaction.getValue(),
+                        blockHeight);
+                coinbaseTransaction.setTXID(coinbaseTxId);
+
+                // generate the merkle root again
+                block.setMerkleRoot(BlockUtil.generateMerkleRoot(block.getTransactions()));
+
+                // reset the block's nonce
+                block.setNonce(0);
+            }
             block.setNonce(block.getNonce() + 1);
         }
         while (!block.getHash().substring(0, block.getDifficultyTarget()).equals(target));
-        // add reward/coinbase  transaction to the miner's wallet
-        Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(nodeOwner),5, utxos, blockHeight);
-
-        block.addTransaction(coinbaseTransaction);
     }
 
     public static Block generateEmptyBlock(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight) {
         Block blockToBeMined = new Block(prevBlock, null);
-        BlockUtil.mineBlock(blockToBeMined, nodeOwner, utxos, blockHeight);
+        // add reward/coinbase  transaction to the miner's wallet
+        Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(nodeOwner),5, utxos, blockHeight);
+        blockToBeMined.addTransaction(coinbaseTransaction);
+
         return blockToBeMined;
     }
 
     public static Block generateBlockWithTransaction(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight, List<Transaction> transactions) {
         Block blockToBeMined = new Block(prevBlock, null);
-        BlockUtil.mineBlock(blockToBeMined, nodeOwner, utxos, blockHeight);
 
-        // add the unconfirmed transactions
-        transactions.stream().forEach(transaction -> blockToBeMined.addTransaction(transaction));
+        // add reward/coinbase  transaction to the miner's wallet
+        Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(nodeOwner),5, utxos, blockHeight);
+        blockToBeMined.addTransaction(coinbaseTransaction);
+        blockToBeMined.getTransactions().addAll(transactions);
 
         // generate the merkle root
-        blockToBeMined.setMerkleRoot(BlockUtil.generateMerkleRoot(blockToBeMined.getTransactions()));
+        blockToBeMined.setMerkleRoot(BlockUtil.generateMerkleRoot(transactions));
+
+        BlockUtil.mineBlock(blockToBeMined, nodeOwner, utxos, blockHeight);
+
+
 
         return blockToBeMined;
     }

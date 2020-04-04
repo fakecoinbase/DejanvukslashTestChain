@@ -345,6 +345,11 @@ public class TransactionUtil {
             // No inputs, so an empty list
             List<TransactionInput> inputs = new ArrayList<>();
 
+            inputs.add(new TransactionInput( // coinbase
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                    blockHeight, // The input for the coinbase transaction must contain the block height as the first script data
+                    ""));
+
             // add Transaction Output
             List<TransactionOutput> outputs = new ArrayList<>();
             outputs.add(new TransactionOutput(CryptoUtil.getPublicKeyFromString(to), value));

@@ -5,6 +5,7 @@ import com.chain.api.core.Net.CNode;
 import com.chain.api.core.Net.ListenThread;
 import com.chain.api.core.Transaction.Transaction;
 import com.chain.api.core.Transaction.UTXO;
+import com.chain.api.core.Transaction.UnconfirmedTransactions;
 import com.chain.api.core.Wallet.WalletUtil;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -36,7 +37,7 @@ public class ApiApplication {
 
     @Bean
     @Scope("singleton")
-    public List<Transaction> unconfirmedTransactions() { return Collections.synchronizedList(new ArrayList<Transaction>());}
+    public UnconfirmedTransactions unconfirmedTransactions() { return new UnconfirmedTransactions();}
 
     @Bean
     @Scope("singleton")

@@ -5,6 +5,7 @@ import com.chain.api.core.Block.BlockUtil;
 import com.chain.api.core.Transaction.Transaction;
 import com.chain.api.core.Transaction.TransactionUtil;
 import com.chain.api.core.Transaction.UTXO;
+import com.chain.api.core.Transaction.UnconfirmedTransactions;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ public class HandlePeerThread implements Runnable{
 
     private List<Block> blockchain;
 
-    private List<Transaction> unconfirmedTransactions;
+    private UnconfirmedTransactions unconfirmedTransactions;
 
     private KeyPair nodeOwnerKeyPair;
 
@@ -46,7 +47,7 @@ public class HandlePeerThread implements Runnable{
     }
 
     @Autowired
-    public void setUnconfirmedTransactions(List<Transaction> unconfirmedTransactions) { this.unconfirmedTransactions = unconfirmedTransactions; }
+    public void setUnconfirmedTransactions(UnconfirmedTransactions unconfirmedTransactions) { this.unconfirmedTransactions = unconfirmedTransactions; }
 
     HandlePeerThread(CNode CNode) {
         this.CNode = CNode;
@@ -67,7 +68,10 @@ public class HandlePeerThread implements Runnable{
                     case BLOCKCHAIN: //received a list of blocks
                         break;
                     case BLOCK: // received a block
+                        // validate it
+                        // update the unconfirmed transactions
                         // add the block to the blockchain
+                        // send it to all the known peers
                         break;
                     case TRANS: // received a transaction
                         try {
@@ -78,25 +82,23 @@ public class HandlePeerThread implements Runnable{
                                 break;
                             }
                             // add the transaction to our block or create a new block if it's full
-                            synchronized (this) {
-                                unconfirmedTransactions.add(transaction);
-                                if(unconfirmedTransactions.size() == 3499) {
-                                    // generate a new block with the unconfirmed transactions
-                                    Thread thread = new Thread(){
-                                        public void run(){
-                                            Block block = BlockUtil.generateBlockWithTransaction(
-                                                    blockchain.get(blockchain.size() - 1),
-                                                    nodeOwnerKeyPair.getPublic(),
-                                                    unspentTransactionOutputs,
-                                                    blockchain.size(),
-                                                    unconfirmedTransactions
-                                            );
-                                            // clear the unconfirmed transactions list
-                                            unconfirmedTransactions = Collections.synchronizedList(new ArrayList<Transaction>());
-                                        }
-                                    };
-                                    thread.start();
-                                }
+                            unconfirmedTransactions.getTransactions().add(transaction);
+                            if(unconfirmedTransactions.getTransactions().size() == 3499) {
+                                // generate a new block with the unconfirmed transactions
+                                Thread thread = new Thread(){
+                                    public void run(){
+                                        Block block = BlockUtil.generateBlockWithTransaction(
+                                                blockchain.get(blockchain.size() - 1),
+                                                nodeOwnerKeyPair.getPublic(),
+                                                unspentTransactionOutputs,
+                                                blockchain.size(),
+                                                unconfirmedTransactions.getTransactions()
+                                        );
+                                        // clear the unconfirmed transactions list
+                                        unconfirmedTransactions.updateUnconfirmedTransactions(Collections.synchronizedList(new ArrayList<Transaction>()));
+                                    }
+                                };
+                                thread.start();
                             }
 
                             // send the transaction to all of our known peers save the one who sent it
