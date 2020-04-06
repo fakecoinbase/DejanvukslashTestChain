@@ -12,10 +12,90 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class BlockUtil {
 
-    public static boolean isBlockValid() {
+    public static boolean isBlockValid(Block block, List<Block> blockchain, int difficulty) {
+        // Reject if duplicate of block we have in any of the three categories
+        for(int i = 0 ; i < blockchain.size(); i++) {
+            Block currBlock = blockchain.get(i);
+            if(block.getHash().equals(currBlock.getHash())) {
+                System.out.println("Duplicate block!");
+                return false;
+            }
+        }
+
+        // Transaction list must be non-empty
+        if(block.getTransactions().isEmpty()) {
+            System.out.println("Transaction list must be non-empty!");
+            return false;
+        }
+
+        // Block hash must satisfy claimed nBits proof of work
+        if(!isBlockMined(block, difficulty)) {
+            return false;
+        }
+
+        // Block timestamp must not be more than two hours in the future
+        Long timestamp = block.getTimestamp();
+        Long currTime = new Date().getTime();
+        if(TimeUnit.MILLISECONDS.toHours(timestamp - currTime) > 2) {
+            System.out.println("Block timestamp must not be more than two hours in the future");
+            return false;
+        }
+
+        int blockHeight = blockchain.size() - 1;
+
+        // First transaction must be coinbase (i.e. only 1 input, with hash=0, n=-1), the rest must not be
+        Transaction coinbase = block.getTransactions().get(0);
+        if(!TransactionUtil.verifyCoinbaseTransaction(coinbase,blockHeight)) {
+            System.out.println("Failed verifying coinbase!");
+            return false;
+        }
+
+        // Each miner can choose which transactions are included in or exempted from a block
+        // Exempt only the transactions which are invalid
+        List<Transaction> validTransactions = new ArrayList<>();
+
+        for(int i = 1; i < block.getTransactions().size(); i++) {
+            Transaction transaction = block.getTransactions().get(i);
+            if(!TransactionUtil.verifyTransaction(transaction,blockchain, blockHeight)) {
+                System.out.println("Failed tx " + i + " check!");
+            }
+            else {
+                validTransactions.add(transaction);
+            }
+        }
+
+        if(validTransactions.size() >= 1 && validTransactions.size() != block.getTransactions().size()) {
+            // add the valid transactions
+        }
+        else {
+            // add the valid block to the chain
+        }
+
+        // Verify Merkle hash
+        if(!generateMerkleRoot(block.getTransactions()).equals(block.getMerkleRoot())) {
+            System.out.println("Merkle hash is invalid!");
+            return false;
+        }
+
+        // Check if prev block (matching prev hash) is in main branch or side branches.
+        // If not, add this to orphan blocks, then query peer we got this from for 1st missing orphan block in prev chain; done with block
+
+
+        return true;
+    }
+
+    public static boolean validateBlockchain(List<Block> blockchain) {
+        if(blockchain.isEmpty()) {
+            System.out.print("Blockchain can't be empty!");
+            return false;
+        }
+        // verify the genesis block
+
+
         return true;
     }
 
@@ -76,11 +156,10 @@ public class BlockUtil {
         return true;
     }
 
-    public static boolean isBlockMined(Block block) {
-        int difficulty = 5; // read dificulty from a central config server
+    public static boolean isBlockMined(Block block, int difficulty) {
         String hashTarget = new String(new char[difficulty]).replace('\0', '0');
         if(!block.getHash().substring( 0, difficulty).equals(hashTarget)) {
-            System.out.println("Block wasn't mined!");
+            System.out.println("Block hash must satisfy claimed nBits proof of work!");
             return false;
         }
         return true;
@@ -117,7 +196,7 @@ public class BlockUtil {
                 + block.getNonce()));
     }
 
-    public static void mineBlock(Block block, PublicKey nodeOwner, List<UTXO> utxos, int blockHeight) {
+    public static void mineBlock(Block block, PublicKey nodeOwner, int blockHeight) {
         block.setTimestamp(new Date().getTime());
         String target = new String(new char[block.getDifficultyTarget()]).replace('\0', '0'); // Create a string with difficulty * "0"
         do {
@@ -166,12 +245,26 @@ public class BlockUtil {
         blockToBeMined.getTransactions().addAll(transactions);
 
         // generate the merkle root
-        blockToBeMined.setMerkleRoot(BlockUtil.generateMerkleRoot(transactions));
+        blockToBeMined.setMerkleRoot(generateMerkleRoot(transactions));
 
-        BlockUtil.mineBlock(blockToBeMined, nodeOwner, utxos, blockHeight);
+        BlockUtil.mineBlock(blockToBeMined, nodeOwner,blockHeight);
 
-
+        // Add the block to the database
 
         return blockToBeMined;
+    }
+
+    public static Block generateGenesisBlock(PublicKey nodeOwner, int value) {
+        Block block = new Block(null, null);
+        Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(
+                CryptoUtil.getStringFromKey(nodeOwner),
+                value,
+                null, // genesis block coinbase transaction can't be used
+                0);
+        block.addTransaction(coinbaseTransaction);
+
+        BlockUtil.mineBlock(block, nodeOwner, 0);
+
+        return block;
     }
 }

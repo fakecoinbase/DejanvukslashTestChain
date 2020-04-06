@@ -66,6 +66,14 @@ public class HandlePeerThread implements Runnable{
                     case ADDR: // received a list of peers
                         break;
                     case BLOCKCHAIN: //received a list of blocks
+                        try {
+                            List<Block> receivedBlockchain = (ArrayList<Block>)CNode.getObjectInput().readObject();
+                            // validate the blockchain
+
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
+
                         break;
                     case BLOCK: // received a block
                         // validate it

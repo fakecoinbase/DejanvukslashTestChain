@@ -275,37 +275,43 @@ public class TransactionUtil {
 
         // other validations
 
+        // Note: verifying that none of the transaction's inputs have been previously spent is not neccesary
 
         return true;
     }
 
-    public static boolean verifyCoinbaseTransaction(Transaction coinbasetransaction,Integer blockHeight) {
+    public static boolean verifyCoinbaseTransaction(Transaction coinbase,Integer blockHeight) {
         // Check if the coinbase transaction was modified
-        if(!coinbasetransaction.getTXID().equals(
+        if(!coinbase.getTXID().equals(
                 generateTransactionId(
-                        coinbasetransaction.getInputs(),
-                        coinbasetransaction.getOutputs(),
-                        (coinbasetransaction.getSender() == null) ? "" : CryptoUtil.getStringFromKey(coinbasetransaction.getSender()),
-                        CryptoUtil.getStringFromKey(coinbasetransaction.getReceiver()),
-                        coinbasetransaction.getValue(),
+                        coinbase.getInputs(),
+                        coinbase.getOutputs(),
+                        (coinbase.getSender() == null) ? "" : CryptoUtil.getStringFromKey(coinbase.getSender()),
+                        CryptoUtil.getStringFromKey(coinbase.getReceiver()),
+                        coinbase.getValue(),
                         blockHeight))) {
             System.out.println("Coinbase transaction has an invalid TXID!");
             return false;
         }
 
         // Reward transaction has no inputs
-        if(!coinbasetransaction.getInputs().isEmpty()) {
-            System.out.println("Coinbase transaction should have no inputs!");
+        if(coinbase.getInputs().size() != 1) {
+            System.out.println("Coinbase should have 1 input only!");
             return false;
         }
 
         // Reward transaction has one output
-        if(coinbasetransaction.getOutputs().size() != 1) {
+        if(coinbase.getOutputs().size() != 1) {
             System.out.println("Coinbase transaction has more than one output!");
             return false;
         }
 
         // other coinbase validations
+
+        if(!coinbase.getInputs().get(0).getPreviousTx().equals("0000000000000000000000000000000000000000000000000000000000000000")) {
+            return false;
+        }
+
 
         return true;
     }
@@ -366,10 +372,11 @@ public class TransactionUtil {
             );
 
             // add the new TXO's in UTXO's after we get txid
-
-            for(int i = 0; i < outputs.size(); i++) {
-                TransactionOutput tempTo = outputs.get(i);
-                utxos.add(new UTXO(transaction.getTXID(),i,tempTo.getTo(),tempTo.getValue()));
+            if(utxos != null) {
+                for(int i = 0; i < outputs.size(); i++) {
+                    TransactionOutput tempTo = outputs.get(i);
+                    utxos.add(new UTXO(transaction.getTXID(),i,tempTo.getTo(),tempTo.getValue()));
+                }
             }
 
             return transaction;
