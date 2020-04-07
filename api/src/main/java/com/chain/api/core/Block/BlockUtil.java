@@ -10,13 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class BlockUtil {
 
-    public static boolean isBlockValid(Block block, List<Block> blockchain, int difficulty) {
+    public static boolean isBlockValid(Block block, List<Block> blockchain, int difficulty, int blockHeight) {
         // Reject if duplicate of block we have in any of the three categories
         for(int i = 0 ; i < blockchain.size(); i++) {
             Block currBlock = blockchain.get(i);
@@ -33,7 +34,9 @@ public class BlockUtil {
         }
 
         // Block hash must satisfy claimed nBits proof of work
-        if(!isBlockMined(block, difficulty)) {
+        // and check that nBits value matches the difficulty rules of the block
+        if(!isBlockMined(block, difficulty) || !isBlockMined(block, block.getDifficultyTarget())) {
+            System.out.println("Block hash must satisfy claimed nBits proof of work!");
             return false;
         }
 
@@ -45,8 +48,6 @@ public class BlockUtil {
             return false;
         }
 
-        int blockHeight = blockchain.size() - 1;
-
         // First transaction must be coinbase (i.e. only 1 input, with hash=0, n=-1), the rest must not be
         Transaction coinbase = block.getTransactions().get(0);
         if(!TransactionUtil.verifyCoinbaseTransaction(coinbase,blockHeight)) {
@@ -54,36 +55,34 @@ public class BlockUtil {
             return false;
         }
 
-        // Each miner can choose which transactions are included in or exempted from a block
-        // Exempt only the transactions which are invalid
-        List<Transaction> validTransactions = new ArrayList<>();
-
-        for(int i = 1; i < block.getTransactions().size(); i++) {
-            Transaction transaction = block.getTransactions().get(i);
-            if(!TransactionUtil.verifyTransaction(transaction,blockchain, blockHeight)) {
-                System.out.println("Failed tx " + i + " check!");
-            }
-            else {
-                validTransactions.add(transaction);
-            }
-        }
-
-        if(validTransactions.size() >= 1 && validTransactions.size() != block.getTransactions().size()) {
-            // add the valid transactions
-        }
-        else {
-            // add the valid block to the chain
-        }
-
         // Verify Merkle hash
-        if(!generateMerkleRoot(block.getTransactions()).equals(block.getMerkleRoot())) {
+        if(!BlockUtil.generateMerkleRoot(block.getTransactions()).equals(block.getMerkleRoot())) {
             System.out.println("Merkle hash is invalid!");
+        }
+
+        // A timestamp is accepted as valid if it is greater than the median timestamp of previous 11 blocks
+        // and less than the network-adjusted time + 2 hours.
+        timestamp = 0l;
+        int count = 0;
+        for(int i = blockchain.size() - 1; i >= 0 && count < 11; i--, count++) {
+           timestamp += blockchain.get(i).getTimestamp();
+        }
+
+        if(block.getTimestamp() < (timestamp / count)) {
+            System.out.println("Block's timestamp must be greater than the median timestamp of previous 11 blocks!");
             return false;
         }
 
-        // Check if prev block (matching prev hash) is in main branch or side branches.
-        // If not, add this to orphan blocks, then query peer we got this from for 1st missing orphan block in prev chain; done with block
+        Calendar cal = Calendar.getInstance(); // creates calendar
+        cal.setTime(new Date()); // sets calendar time/date
+        cal.add(Calendar.HOUR_OF_DAY, 2); // adds two hours
 
+        if(block.getTimestamp() > cal.getTime().getTime()) { // first call to getTime returns a Date object 2 hours in the future
+            System.out.println("Block's timestamp must be less than the network-adjusted time + 2 hours!");
+            return false;
+        }
+
+        // other validations
 
         return true;
     }
