@@ -27,9 +27,7 @@ public class ApiApplication {
 
     @Bean
     @Scope("singleton")
-    public List<Block> blockchain() {
-        return new ArrayList<Block>();
-    }
+    public List<Block> blockchain() { return new ArrayList<Block>(); }
 
     @Bean
     @Scope("singleton")
@@ -47,9 +45,15 @@ public class ApiApplication {
     @Scope("singleton")
     public KeyPair nodeOwnerKeyPair() {return WalletUtil.generateKeyPair();}
 
+    @Bean
+    @Scope("singleton")
+    public List<Thread> threadList() {return new ArrayList<Thread>();}
+
 
     public static void main(String[] args) {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+
+
 
         Thread listenThread = new Thread(new ListenThread(4000));
         listenThread.start();

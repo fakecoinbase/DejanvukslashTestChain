@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+
 public class SendObjectThread implements Runnable {
     private Object data;
     private MsgType msgType;
@@ -58,14 +60,6 @@ public class SendObjectThread implements Runnable {
                 });
                 break;
             case BLOCKCHAIN:
-                /*
-                Block[] block_array = (data != null) ? (Block[]) data : null;
-                if(block_array == null) {
-                    System.out.println("Cannot send an empty blockchain!");
-                    break;
-                }
-                List<Block> blockchain = new ArrayList<>(Arrays.asList(block_array));
-                */
                 vNodes.stream().forEach(peer -> {
                     try {
                         ObjectOutputStream objectOutputStream = new ObjectOutputStream(peer.getSocket().getOutputStream());
@@ -93,3 +87,5 @@ public class SendObjectThread implements Runnable {
         }
     }
 }
+
+**/

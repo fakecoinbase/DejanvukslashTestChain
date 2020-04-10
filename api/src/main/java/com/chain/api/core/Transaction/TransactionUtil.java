@@ -11,9 +11,7 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * A collection of utils for Transactions
@@ -98,57 +96,10 @@ public class TransactionUtil {
      * @param currentUTXOs the UTXO's of the blockchain prior to the new received block
      * @return the new list of unspent transaction outputs
      */
-    public static void updateUtxos(List<Transaction> transactions, List<UTXO> currentUTXOs) {
-        // Retrieve all the TXO's from the received block as UTXO
-        List<UTXO> blocksTXOs = new ArrayList<>(); // the UTXO's from the received block
+    public static void updateUtxos(List<Transaction> transactions, List<UTXO> currentUTXOs, UnconfirmedTransactions unconfirmedTransactions) {
         transactions.stream().forEach(transaction -> {
-            int i = 0;
-            List<TransactionOutput> outputs = transaction.getOutputs();
-            while(i < outputs.size()) {
-                TransactionOutput to = outputs.get(i);
-                blocksTXOs.add(new UTXO(transaction.getTXID(), i++, to.getTo(), to.getValue()));
-            }
+            updateUtxos(transaction,currentUTXOs,unconfirmedTransactions);
         });
-
-        // check which currentUTXOs and blocksUTXOs are consumed by the transactions from the received block
-
-        // 1.get all the new spent TXO's referenced by the new TXI's
-        List<UTXO> consTXOs =  new ArrayList<>();
-        transactions.stream().forEach(transaction -> {
-            transaction.getInputs().stream().forEach(input -> {
-                consTXOs.add(new UTXO(input.getPreviousTx(),input.getIndex(), null, 0));});});
-
-        // 2.remove the consumed UTXO's from the currentUTXO's
-        for(int i = 0; i < currentUTXOs.size(); i++) {
-            UTXO utxo = currentUTXOs.get(i);
-            for(int j = 0; j < consTXOs.size(); j++) {
-                UTXO spentUTXO = consTXOs.get(j);
-                if(utxo.getPreviousTx() == spentUTXO.getPreviousTx() && utxo.getIndex() == spentUTXO.getIndex()) {
-                    currentUTXOs.remove(i);
-                    i--;
-                    consTXOs.remove(j); // an input can only reference a TXO once
-                    break;
-                }
-            }
-        }
-
-        // 3. remove the consumed TXO's from the blocksTXOs
-
-        for(int i = 0; i < blocksTXOs.size(); i++) {
-            UTXO utxo = blocksTXOs.get(i);
-            for(int j = 0; j < consTXOs.size(); j++) {
-                UTXO spentUTXO = consTXOs.get(j);
-                if(utxo.getPreviousTx() == spentUTXO.getPreviousTx() && utxo.getIndex() == spentUTXO.getIndex()) {
-                    blocksTXOs.remove(i);
-                    i--;
-                    consTXOs.remove(j);
-                    break;
-                }
-            }
-        }
-
-        // 4. add the new UTXO's blocksTXO's to the currentUTXOs
-        currentUTXOs.addAll(blocksTXOs);
     }
 
     /**
@@ -159,7 +110,7 @@ public class TransactionUtil {
      * @param currentUTXOs the UTXO's of the blockchain prior to the new received block
      * @return the new list of unspent transaction outputs
      */
-    public static void updateUtxos(Transaction transaction, List<UTXO> currentUTXOs) {
+    public static void updateUtxos(Transaction transaction, List<UTXO> currentUTXOs, UnconfirmedTransactions unconfirmedTransactions) {
         // Retrieve all the TXO's from the received transaction as UTXO
         List<UTXO> blocksTXOs = new ArrayList<>();
         List<TransactionOutput> outputs = transaction.getOutputs();
@@ -205,6 +156,10 @@ public class TransactionUtil {
 
         // 4. add the new UTXO's blocksTXO's to the currentUTXOs
         currentUTXOs.addAll(blocksTXOs);
+
+        // 5. add the Transaction to unconfirmed transactions
+
+        unconfirmedTransactions.addUnconfirmedTransactions(transaction);
     }
 
     /**
@@ -254,13 +209,13 @@ public class TransactionUtil {
                         transaction.getValue(),
                         blockHeight))) {
             System.out.println("Transaction has an invalid id!");
-            return false;
+            return true;
         }
 
         // Validate the transaction inputs
         if(!verifyTransactionInputs(transaction.getSender(),transaction.getInputs(), transaction.getTXID())) {
             System.out.println("");
-            return false;
+            return true;
         }
 
         // the value of TXI's must be equivalent to the value of TXO's
@@ -270,14 +225,14 @@ public class TransactionUtil {
 
         if(txInTotalValue != txOutTotalValue) {
             System.out.println("Outputs and Inputs total values dont match!");
-            return false;
+            return true;
         }
 
         // other validations
 
         // Note: verifying that none of the transaction's inputs have been previously spent is not neccesary
 
-        return true;
+        return false;
     }
 
     public static boolean verifyCoinbaseTransaction(Transaction coinbase,Integer blockHeight) {

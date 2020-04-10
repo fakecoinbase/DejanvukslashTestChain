@@ -1,6 +1,7 @@
 package com.chain.api.core.Block;
 
 import com.chain.api.core.Crypto.CryptoUtil;
+import com.chain.api.core.Net.MineBlockThread;
 import com.chain.api.core.Transaction.Transaction;
 import com.chain.api.core.Transaction.TransactionInput;
 import com.chain.api.core.Transaction.TransactionUtil;
@@ -195,35 +196,10 @@ public class BlockUtil {
                 + block.getNonce()));
     }
 
-    public static void mineBlock(Block block, PublicKey nodeOwner, int blockHeight) {
-        block.setTimestamp(new Date().getTime());
-        String target = new String(new char[block.getDifficultyTarget()]).replace('\0', '0'); // Create a string with difficulty * "0"
-        do {
-            generateHash(block);
-            if(block.getNonce() >= Integer.MAX_VALUE) {
-                // Change the Coinbase transaction's nonce
-                Transaction coinbaseTransaction = block.getTransactions().get(0);
-                TransactionInput coinbase = coinbaseTransaction.getInputs().get(0);
-                coinbase.increaseNonce();
-                // Recalculate the TXID of the coinbase transaction
-                String coinbaseTxId = TransactionUtil.generateTransactionId(
-                        coinbaseTransaction.getInputs(),
-                        coinbaseTransaction.getOutputs(),
-                        "",
-                        CryptoUtil.getStringFromKey(coinbaseTransaction.getReceiver()),
-                        coinbaseTransaction.getValue(),
-                        blockHeight);
-                coinbaseTransaction.setTXID(coinbaseTxId);
-
-                // generate the merkle root again
-                block.setMerkleRoot(BlockUtil.generateMerkleRoot(block.getTransactions()));
-
-                // reset the block's nonce
-                block.setNonce(0);
-            }
-            block.setNonce(block.getNonce() + 1);
-        }
-        while (!block.getHash().substring(0, block.getDifficultyTarget()).equals(target));
+    public static void mineBlock(List<Thread> threadList,Block block, PublicKey nodeOwner, int blockHeight) {
+        Thread mineBlockThread = new Thread(new MineBlockThread(block,nodeOwner,blockHeight));
+        mineBlockThread.start();
+        threadList.add(mineBlockThread);
     }
 
     public static Block generateEmptyBlock(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight) {
@@ -235,7 +211,7 @@ public class BlockUtil {
         return blockToBeMined;
     }
 
-    public static Block generateBlockWithTransaction(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight, List<Transaction> transactions) {
+    public static Block generateBlockWithTransaction(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight, List<Transaction> transactions, List<Transaction> unconfirmedTransactions, List<Thread> threadList) {
         Block blockToBeMined = new Block(prevBlock, null);
 
         // add reward/coinbase  transaction to the miner's wallet
@@ -246,14 +222,28 @@ public class BlockUtil {
         // generate the merkle root
         blockToBeMined.setMerkleRoot(generateMerkleRoot(transactions));
 
-        BlockUtil.mineBlock(blockToBeMined, nodeOwner,blockHeight);
+        BlockUtil.mineBlock(threadList, blockToBeMined, nodeOwner,blockHeight);
+
+        // remove the mined unconfirmed transactions
+
+        for(int i = 0; i < unconfirmedTransactions.size(); i++) {
+            Transaction transaction = unconfirmedTransactions.get(i);
+            for(int j = 0; j < transactions.size(); j++) {
+                Transaction minedTransaction = transactions.get(j);
+                if(transaction.getTXID() == minedTransaction.getTXID()) {
+                    unconfirmedTransactions.remove(i);
+                    i--;
+                    break;
+                }
+            }
+        }
 
         // Add the block to the database
 
         return blockToBeMined;
     }
 
-    public static Block generateGenesisBlock(PublicKey nodeOwner, int value) {
+    public static Block generateGenesisBlock(PublicKey nodeOwner, int value, List<Thread> threadList) {
         Block block = new Block(null, null);
         Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(
                 CryptoUtil.getStringFromKey(nodeOwner),
@@ -262,8 +252,12 @@ public class BlockUtil {
                 0);
         block.addTransaction(coinbaseTransaction);
 
-        BlockUtil.mineBlock(block, nodeOwner, 0);
+        BlockUtil.mineBlock(threadList,block, nodeOwner, 0);
 
         return block;
+    }
+
+    public static void addBlockToBlockchain(Block block, List<UTXO> utxos) {
+
     }
 }

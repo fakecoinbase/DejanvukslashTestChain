@@ -94,7 +94,7 @@ public class NetUtil {
 
 
 
-    public static void sendObjectToPeer(Object data, CNode peer, MsgType msgType) {
+    private static void sendObjectToPeer(Object data, CNode peer, MsgType msgType) {
         switch (msgType) {
             case BLOCK:
                 Block block = (data != null) ? (Block) data : null;

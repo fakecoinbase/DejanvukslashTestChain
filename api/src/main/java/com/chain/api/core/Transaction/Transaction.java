@@ -19,6 +19,8 @@ public class Transaction {
     private PublicKey receiver;
     private float value;
 
+
+
     private List<TransactionInput> inputs;
     private List<TransactionOutput> outputs;
 
