@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.security.KeyPair;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -27,10 +28,10 @@ public class HandlePeerThread implements Runnable{
 
     private List<UTXO> unspentTransactionOutputs;
 
-    private List<Thread> threadList;
+    private List<CreateBlockThread> threadList;
 
     @Autowired
-    public void setThreadList(List<Thread> threadList) {this.threadList = threadList;}
+    public void setThreadList(List<CreateBlockThread> threadList) {this.threadList = threadList;}
 
     @Autowired
     public void setNodeOwnerKeyPair(KeyPair nodeOwnerKeyPair) { this.nodeOwnerKeyPair = nodeOwnerKeyPair; }
@@ -81,6 +82,9 @@ public class HandlePeerThread implements Runnable{
                         break;
                     case BLOCK: // received a block
                         // stop the mining threads if they exist
+                        stopMiningThreads(threadList);
+
+                        // handle the block
                         Block block = null;
                         try {
                             block = (Block) CNode.getObjectInput().readObject();
@@ -96,7 +100,23 @@ public class HandlePeerThread implements Runnable{
                         try {
                             // read the transaction and perform verifications
                             transaction = (Transaction) CNode.getObjectInput().readObject();
-                            handleTransaction(transaction);
+
+                            Objects.requireNonNull(transaction, "received null transaction!");
+
+                            if(TransactionUtil.verifyTransaction(transaction, blockchain, blockchain.size())) {
+                                System.out.println("The transaction is invalid!");
+                                break;
+                            }
+
+                            TransactionUtil.handleTransaction(
+                                    false,
+                                    transaction,
+                                    blockchain,
+                                    unspentTransactionOutputs,
+                                    unconfirmedTransactions,
+                                    threadList,
+                                    nodeOwnerKeyPair.getPublic(),
+                                    vNodes);
                         } catch (ClassNotFoundException e) {
                             e.printStackTrace();
                             break;
@@ -150,7 +170,15 @@ public class HandlePeerThread implements Runnable{
 
         if(validTransactions.size() >= 1 && validTransactions.size() != block.getTransactions().size()) {
             // add the valid transactions to our current block
-            TransactionUtil.updateUtxos(validTransactions,unspentTransactionOutputs,unconfirmedTransactions);
+            validTransactions.stream().forEach(transaction ->  TransactionUtil.handleTransaction(
+                    false,
+                    transaction,
+                    blockchain,
+                    unspentTransactionOutputs,
+                    unconfirmedTransactions,
+                    threadList,
+                    nodeOwnerKeyPair.getPublic(),
+                    vNodes));
         }
         else {
             // add the validated block to the tree
@@ -171,42 +199,8 @@ public class HandlePeerThread implements Runnable{
         Objects.requireNonNull(receivedBlochain, "received null blockchain!");
     }
 
-    public void handleTransaction(Transaction transaction) {
-        Objects.requireNonNull(transaction, "received null transaction!");
-
-        if(TransactionUtil.verifyTransaction(transaction, blockchain, blockchain.size())) {
-            System.out.println("The transaction is invalid!");
-            return;
-        }
-        // add the transaction to our block or create a new block if it's full
-        TransactionUtil.updateUtxos(transaction,unspentTransactionOutputs,unconfirmedTransactions);
-        if(unconfirmedTransactions.getTransactions().size() >= 3500) {
-            // generate a new block with the unconfirmed transactions
-            Thread thread = new Thread(){
-                public void run(){
-                    Block block = BlockUtil.generateBlockWithTransaction(
-                            blockchain.get(blockchain.size() - 1),
-                            nodeOwnerKeyPair.getPublic(),
-                            unspentTransactionOutputs,
-                            blockchain.size(),
-                            unconfirmedTransactions.copyUnconfirmedTransactions(),
-                            unconfirmedTransactions.getTransactions(),
-                            threadList
-                    );
-                    // add the block to the blockchain
-                    blockchain.add(block);
-                }
-            };
-            thread.start();
-        }
-
-        // send the transaction to all of our known peers save the one who sent it
-        Thread thread = new Thread(){
-            public void run(){
-                NetUtil.sendTransactionToAllPeers(transaction, vNodes);
-            }
-        };
-        thread.start();
+    public void stopMiningThreads(List<CreateBlockThread> threadList) {
+        threadList.stream().forEach(thread -> thread.stopMining());
     }
 
 }

@@ -2,6 +2,7 @@ package com.chain.api.core.services;
 
 import com.chain.api.core.Block.Block;
 import com.chain.api.core.Net.CNode;
+import com.chain.api.core.Net.CreateBlockThread;
 import com.chain.api.core.Net.NetUtil;
 import com.chain.api.core.Transaction.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,36 +10,73 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 public class TransactionServiceImp implements TransactionService {
 
-    @Autowired
-    List<Block> blockchain;
+    private List<CNode> vNodes;
+
+    private List<Block> blockchain;
+
+    private UnconfirmedTransactions unconfirmedTransactions;
+
+    private KeyPair nodeOwnerKeyPair;
+
+    private List<UTXO> unspentTransactionOutputs;
+
+    private List<CreateBlockThread> threadList;
 
     @Autowired
-    List<UTXO> unspentTransactionOutputs;
+    public void setThreadList(List<CreateBlockThread> threadList) {this.threadList = threadList;}
 
     @Autowired
-    UnconfirmedTransactions unconfirmedTransactions;
+    public void setNodeOwnerKeyPair(KeyPair nodeOwnerKeyPair) { this.nodeOwnerKeyPair = nodeOwnerKeyPair; }
 
     @Autowired
-    List<CNode> vNodes;
+    public void setUnspentTransactionOutputs(List<UTXO> unspentTransactionOutputs) {
+        this.unspentTransactionOutputs = unspentTransactionOutputs;
+    }
+
+    @Autowired
+    public void setvNodes(List<CNode> vNodes) {
+        this.vNodes = vNodes;
+    }
+
+    @Autowired
+    public void setBlockchain(List<Block> blockchain) {
+        this.blockchain = blockchain;
+    }
+
+    @Autowired
+    public void setUnconfirmedTransactions(UnconfirmedTransactions unconfirmedTransactions) { this.unconfirmedTransactions = unconfirmedTransactions; }
 
     @Override
     public Transaction createTransaction(TransactionPayload payload) {
         try {
             Transaction transaction = TransactionUtil.createTransaction(payload.getFrom(), payload.getTo(), payload.getValue(), unspentTransactionOutputs, blockchain.size());
 
-            // add the transactions to unconfirmed
-            unconfirmedTransactions.addUnconfirmedTransactions(transaction);
+            Objects.requireNonNull(transaction, "transaction can't be null!");
 
-            // send the transaction to all known peers
-            NetUtil.sendTransactionToAllPeers(transaction,vNodes);
+            if(TransactionUtil.verifyTransaction(transaction, blockchain, blockchain.size())) {
+                System.out.println("The transaction is invalid!");
+                return null;
+            }
+
+            TransactionUtil.handleTransaction(true,
+                    transaction,
+                    blockchain,
+                    unspentTransactionOutputs,
+                    unconfirmedTransactions,
+                    threadList,
+                    nodeOwnerKeyPair.getPublic(),
+                    vNodes);
+
             return transaction;
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();

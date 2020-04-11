@@ -1,14 +1,13 @@
 package com.chain.api.core.Block;
 
 import com.chain.api.core.Crypto.CryptoUtil;
-import com.chain.api.core.Net.MineBlockThread;
+import com.chain.api.core.Net.CNode;
+import com.chain.api.core.Net.CreateBlockThread;
 import com.chain.api.core.Transaction.Transaction;
 import com.chain.api.core.Transaction.TransactionInput;
 import com.chain.api.core.Transaction.TransactionUtil;
 import com.chain.api.core.Transaction.UTXO;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -196,12 +195,6 @@ public class BlockUtil {
                 + block.getNonce()));
     }
 
-    public static void mineBlock(List<Thread> threadList,Block block, PublicKey nodeOwner, int blockHeight) {
-        Thread mineBlockThread = new Thread(new MineBlockThread(block,nodeOwner,blockHeight));
-        mineBlockThread.start();
-        threadList.add(mineBlockThread);
-    }
-
     public static Block generateEmptyBlock(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight) {
         Block blockToBeMined = new Block(prevBlock, null);
         // add reward/coinbase  transaction to the miner's wallet
@@ -211,38 +204,14 @@ public class BlockUtil {
         return blockToBeMined;
     }
 
-    public static Block generateBlockWithTransaction(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight, List<Transaction> transactions, List<Transaction> unconfirmedTransactions, List<Thread> threadList) {
-        Block blockToBeMined = new Block(prevBlock, null);
-
-        // add reward/coinbase  transaction to the miner's wallet
-        Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(nodeOwner),5, utxos, blockHeight);
-        blockToBeMined.addTransaction(coinbaseTransaction);
-        blockToBeMined.getTransactions().addAll(transactions);
-
-        // generate the merkle root
-        blockToBeMined.setMerkleRoot(generateMerkleRoot(transactions));
-
-        BlockUtil.mineBlock(threadList, blockToBeMined, nodeOwner,blockHeight);
-
-        // remove the mined unconfirmed transactions
-
-        for(int i = 0; i < unconfirmedTransactions.size(); i++) {
-            Transaction transaction = unconfirmedTransactions.get(i);
-            for(int j = 0; j < transactions.size(); j++) {
-                Transaction minedTransaction = transactions.get(j);
-                if(transaction.getTXID() == minedTransaction.getTXID()) {
-                    unconfirmedTransactions.remove(i);
-                    i--;
-                    break;
-                }
-            }
-        }
-
-        // Add the block to the database
-
-        return blockToBeMined;
+    public static CreateBlockThread generateBlockWithTransaction(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight, List<Transaction> transactions, List<Transaction> unconfirmedTransactions, List<Block> blockchain, List<CNode> vNodes) {
+        CreateBlockThread createBlockThread = new CreateBlockThread(prevBlock, nodeOwner, utxos, blockHeight, transactions, unconfirmedTransactions, blockchain, vNodes);
+        Thread mineBlockThread = new Thread(createBlockThread);
+        mineBlockThread.start();
+        return createBlockThread;
     }
 
+    /* Genesis block will be hardcoded
     public static Block generateGenesisBlock(PublicKey nodeOwner, int value, List<Thread> threadList) {
         Block block = new Block(null, null);
         Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(
@@ -252,10 +221,11 @@ public class BlockUtil {
                 0);
         block.addTransaction(coinbaseTransaction);
 
-        BlockUtil.mineBlock(threadList,block, nodeOwner, 0);
+        //BlockUtil.mineBlock(threadList,block, nodeOwner, 0);
 
         return block;
     }
+    */
 
     public static void addBlockToBlockchain(Block block, List<UTXO> utxos) {
 

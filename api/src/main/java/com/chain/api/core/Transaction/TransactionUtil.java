@@ -1,7 +1,11 @@
 package com.chain.api.core.Transaction;
 
 import com.chain.api.core.Block.Block;
+import com.chain.api.core.Block.BlockUtil;
 import com.chain.api.core.Crypto.CryptoUtil;
+import com.chain.api.core.Net.CNode;
+import com.chain.api.core.Net.CreateBlockThread;
+import com.chain.api.core.Net.NetUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 
 import java.security.NoSuchAlgorithmException;
@@ -11,6 +15,7 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -105,7 +110,7 @@ public class TransactionUtil {
     /**
      *
      * update's the internal list and database of UTXO's
-     * used whenever a new transaction is received from a peer
+     * used whenever a new transaction is received from a peer or a transaction is made
      * @param transaction
      * @param currentUTXOs the UTXO's of the blockchain prior to the new received block
      * @return the new list of unspent transaction outputs
@@ -428,6 +433,43 @@ public class TransactionUtil {
 
         // return the transaction
         return transaction;
+    }
+
+    /**
+     *
+     * @param local true if the transaction was made by the node , false if the transaction was received from a peer
+     * @param transaction
+     * @param blockchain
+     * @param unspentTransactionOutputs
+     * @param unconfirmedTransactions
+     * @param threadList
+     * @param publicKey
+     * @param vNodes
+     */
+    public static void handleTransaction(boolean local,Transaction transaction, List<Block> blockchain, List<UTXO> unspentTransactionOutputs, UnconfirmedTransactions unconfirmedTransactions, List<CreateBlockThread> threadList, PublicKey publicKey, List<CNode> vNodes) {
+        // update the utxos and add new unconfirmed transactions
+        if(!local) // we don't need to update the internal utxo's list if we created the transaction because createTransaction does it itself
+            TransactionUtil.updateUtxos(transaction,unspentTransactionOutputs,unconfirmedTransactions);
+
+        // if the block is full mine and send it to all peers
+        if(unconfirmedTransactions.getTransactions().size() >= 3500) {
+            // generate a new block with the unconfirmed transactions
+            CreateBlockThread createBlockThread = BlockUtil.generateBlockWithTransaction(
+                    blockchain.get(blockchain.size() - 1),
+                    publicKey,
+                    unspentTransactionOutputs,
+                    blockchain.size(),
+                    unconfirmedTransactions.copyUnconfirmedTransactions(),
+                    unconfirmedTransactions.getTransactions(),
+                    blockchain,
+                    vNodes
+            );
+            threadList.add(createBlockThread);
+        }
+
+        // send the transaction to all of our known peers
+        Thread thread = new Thread(() -> NetUtil.sendTransactionToAllPeers(transaction, vNodes));
+        thread.start();
     }
 
 }

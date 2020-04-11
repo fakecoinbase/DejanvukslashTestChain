@@ -2,6 +2,7 @@ package com.chain.api;
 
 import com.chain.api.core.Block.Block;
 import com.chain.api.core.Net.CNode;
+import com.chain.api.core.Net.CreateBlockThread;
 import com.chain.api.core.Net.ListenThread;
 import com.chain.api.core.Transaction.Transaction;
 import com.chain.api.core.Transaction.UTXO;
@@ -47,7 +48,7 @@ public class ApiApplication {
 
     @Bean
     @Scope("singleton")
-    public List<Thread> threadList() {return new ArrayList<Thread>();}
+    public List<CreateBlockThread>threadList() {return new ArrayList<CreateBlockThread>();}
 
 
     public static void main(String[] args) {
