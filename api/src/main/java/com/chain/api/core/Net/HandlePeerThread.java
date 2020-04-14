@@ -2,10 +2,7 @@ package com.chain.api.core.Net;
 
 import com.chain.api.core.Block.Block;
 import com.chain.api.core.Block.BlockUtil;
-import com.chain.api.core.Transaction.Transaction;
-import com.chain.api.core.Transaction.TransactionUtil;
-import com.chain.api.core.Transaction.UTXO;
-import com.chain.api.core.Transaction.UnconfirmedTransactions;
+import com.chain.api.core.Transaction.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
@@ -88,7 +85,7 @@ public class HandlePeerThread implements Runnable{
                         Block block = null;
                         try {
                             block = (Block) CNode.getObjectInput().readObject();
-                            handleBlock(block);
+                            handleBlock(block, unspentTransactionOutputs);
                         } catch (ClassNotFoundException e) {
                             e.printStackTrace();
                         } catch (NullPointerException e) {
@@ -109,7 +106,6 @@ public class HandlePeerThread implements Runnable{
                             }
 
                             TransactionUtil.handleTransaction(
-                                    false,
                                     transaction,
                                     blockchain,
                                     unspentTransactionOutputs,
@@ -131,7 +127,7 @@ public class HandlePeerThread implements Runnable{
         }
     }
 
-    public void handleBlock(Block block) {
+    public void handleBlock(Block block, List<UTXO> utxos) {
 
         Objects.requireNonNull(block, "received null block!");
 
@@ -159,7 +155,29 @@ public class HandlePeerThread implements Runnable{
             }
         }
 
-        // 2. add the block to the blockchain
+        // 2. Remove the unconfirmed transactions that refer to
+        // inputs refered by the transactions of the received block
+        // or that are part of the received block
+
+        // first update the utxo's
+        TransactionUtil.updateUtxos(validTransactions, utxos);
+
+        List<Transaction> unconfirmedTxs = unconfirmedTransactions.getTransactions();
+
+        for(int i = 0; i < unconfirmedTxs .size(); i++) {
+            Transaction currTx = unconfirmedTxs.get(i);
+            List<TransactionInput> currTxi = currTx.getInputs();
+            // if any of the block's valid transactions references any of currTx inputs then remove currTx from unconfirmedTransactions
+            for(int j = 0; j < validTransactions.size(); j++) {
+                Transaction validTx = validTransactions.get(j);
+                List<TransactionInput> validTxi = validTx.getInputs();
+                for(int k = 0; k < validTxi.size(); k++) {
+                    if()
+                }
+            }
+        }
+
+        // 3. add the block to the blockchain
 
         // if prevHash doesnt match our latest block then we have to query the peer for all his blockchain
 
@@ -171,7 +189,6 @@ public class HandlePeerThread implements Runnable{
         if(validTransactions.size() >= 1 && validTransactions.size() != block.getTransactions().size()) {
             // add the valid transactions to our current block
             validTransactions.stream().forEach(transaction ->  TransactionUtil.handleTransaction(
-                    false,
                     transaction,
                     blockchain,
                     unspentTransactionOutputs,
@@ -183,15 +200,11 @@ public class HandlePeerThread implements Runnable{
         else {
             // add the validated block to the tree
             blockchain.add(block);
-            TransactionUtil.updateUtxos(block.getTransactions(),unspentTransactionOutputs,unconfirmedTransactions);
+            TransactionUtil.updateUtxos(block.getTransactions(),unspentTransactionOutputs);
         }
 
         // 3. send it to all the known peers
-        Thread thread = new Thread(){
-            public void run(){
-                NetUtil.sendBlockToAllPeers(block, vNodes);
-            }
-        };
+        Thread thread = new Thread(() -> NetUtil.sendBlockToAllPeers(block, vNodes));
         thread.start();
     }
 
@@ -201,6 +214,7 @@ public class HandlePeerThread implements Runnable{
 
     public void stopMiningThreads(List<CreateBlockThread> threadList) {
         threadList.stream().forEach(thread -> thread.stopMining());
+        threadList.clear();
     }
 
 }

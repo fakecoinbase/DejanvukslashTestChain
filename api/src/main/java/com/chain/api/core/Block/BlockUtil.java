@@ -227,7 +227,4 @@ public class BlockUtil {
     }
     */
 
-    public static void addBlockToBlockchain(Block block, List<UTXO> utxos) {
-
-    }
 }

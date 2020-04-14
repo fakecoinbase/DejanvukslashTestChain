@@ -101,10 +101,64 @@ public class TransactionUtil {
      * @param currentUTXOs the UTXO's of the blockchain prior to the new received block
      * @return the new list of unspent transaction outputs
      */
-    public static void updateUtxos(List<Transaction> transactions, List<UTXO> currentUTXOs, UnconfirmedTransactions unconfirmedTransactions) {
+    public static void updateUtxos(List<Transaction> transactions, List<UTXO> currentUTXOs) {
+        /*
         transactions.stream().forEach(transaction -> {
             updateUtxos(transaction,currentUTXOs,unconfirmedTransactions);
         });
+        */
+
+        // Retrieve all the TXO's from the received block as UTXO
+        List<UTXO> blocksTXOs = new ArrayList<>(); // the UTXO's from the received block
+
+        transactions.stream().forEach(transaction -> {
+            int i = 0;
+            List<TransactionOutput> outputs = transaction.getOutputs();
+            while(i < outputs.size()) {
+                TransactionOutput to = outputs.get(i);
+                blocksTXOs.add(new UTXO(transaction.getTXID(), i++, to.getTo(), to.getValue()));
+            }
+        });
+
+        // check which currentUTXOs and blocksUTXOs are consumed by the transactions from the received block
+
+        // 1.get all the new spent TXO's referenced by the new TXI's
+        List<UTXO> consTXOs =  new ArrayList<>();
+        transactions.stream().forEach(transaction -> {
+            transaction.getInputs().stream().forEach(input -> {
+                consTXOs.add(new UTXO(input.getPreviousTx(),input.getIndex(), null, 0));});});
+
+        // 2.remove the consumed UTXO's from the currentUTXO's
+        for(int i = 0; i < currentUTXOs.size(); i++) {
+            UTXO utxo = currentUTXOs.get(i);
+            for(int j = 0; j < consTXOs.size(); j++) {
+                UTXO spentUTXO = consTXOs.get(j);
+                if(utxo.getPreviousTx() == spentUTXO.getPreviousTx() && utxo.getIndex() == spentUTXO.getIndex()) {
+                    currentUTXOs.remove(i);
+                    i--;
+                    consTXOs.remove(j); // an input can only reference a TXO once
+                    break;
+                }
+            }
+        }
+
+        // 3. remove the consumed TXO's from the blocksTXOs
+
+        for(int i = 0; i < blocksTXOs.size(); i++) {
+            UTXO utxo = blocksTXOs.get(i);
+            for(int j = 0; j < consTXOs.size(); j++) {
+                UTXO spentUTXO = consTXOs.get(j);
+                if(utxo.getPreviousTx() == spentUTXO.getPreviousTx() && utxo.getIndex() == spentUTXO.getIndex()) {
+                    blocksTXOs.remove(i);
+                    i--;
+                    consTXOs.remove(j);
+                    break;
+                }
+            }
+        }
+
+        // 4. add the new UTXO's blocksTXO's to the currentUTXOs
+        currentUTXOs.addAll(blocksTXOs);
     }
 
     /**
@@ -145,7 +199,9 @@ public class TransactionUtil {
         }
 
         // 3. remove the consumed TXO's from the blocksTXOs
-
+        /*
+        // this step is no longer required as the new txo's are not referenced by the transactions txi's,this step was only required when we had an array of transactions and we processed them all at once
+        // the name blocksTXO's should be changed to transactionsTXOs
         for(int i = 0; i < blocksTXOs.size(); i++) {
             UTXO utxo = blocksTXOs.get(i);
             for(int j = 0; j < consTXOs.size(); j++) {
@@ -158,6 +214,7 @@ public class TransactionUtil {
                 }
             }
         }
+        */
 
         // 4. add the new UTXO's blocksTXO's to the currentUTXOs
         currentUTXOs.addAll(blocksTXOs);
@@ -446,10 +503,9 @@ public class TransactionUtil {
      * @param publicKey
      * @param vNodes
      */
-    public static void handleTransaction(boolean local,Transaction transaction, List<Block> blockchain, List<UTXO> unspentTransactionOutputs, UnconfirmedTransactions unconfirmedTransactions, List<CreateBlockThread> threadList, PublicKey publicKey, List<CNode> vNodes) {
-        // update the utxos and add new unconfirmed transactions
-        if(!local) // we don't need to update the internal utxo's list if we created the transaction because createTransaction does it itself
-            TransactionUtil.updateUtxos(transaction,unspentTransactionOutputs,unconfirmedTransactions);
+    public static void handleTransaction(Transaction transaction, List<Block> blockchain, List<UTXO> unspentTransactionOutputs, UnconfirmedTransactions unconfirmedTransactions, List<CreateBlockThread> threadList, PublicKey publicKey, List<CNode> vNodes) {
+        // first update the utxos
+        updateUtxos(transaction,unspentTransactionOutputs,unconfirmedTransactions);
 
         // if the block is full mine and send it to all peers
         if(unconfirmedTransactions.getTransactions().size() >= 3500) {

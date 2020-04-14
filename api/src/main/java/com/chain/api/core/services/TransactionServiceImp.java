@@ -68,7 +68,7 @@ public class TransactionServiceImp implements TransactionService {
                 return null;
             }
 
-            TransactionUtil.handleTransaction(true,
+            TransactionUtil.handleTransaction(
                     transaction,
                     blockchain,
                     unspentTransactionOutputs,

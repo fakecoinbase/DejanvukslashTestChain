@@ -225,14 +225,14 @@ public class TransactionTests {
         transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeySender),4, utxos, 0));
         transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeySender),3, utxos, 0));
         try {
-            TransactionUtil.updateUtxos(transactions,utxosOtherNode, unconfirmedTransactions); // send the 3 created transactions to second node
+            TransactionUtil.updateUtxos(transactions,utxosOtherNode); // send the 3 created transactions to second node
 
             // You can only send blocks or single transactions so we use lists to mimic a block
             // 1. Sender creates 2 transactions on a new node
             List<Transaction> newTransactions = new ArrayList<>();
             newTransactions.add(TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 2, utxosOtherNode, 1));
             newTransactions.add(TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 3, utxosOtherNode, 1));
-            TransactionUtil.updateUtxos(newTransactions,utxos, unconfirmedTransactions); // send the 2 created transactions to first node
+            TransactionUtil.updateUtxos(newTransactions,utxos); // send the 2 created transactions to first node
 
             // the 2 nodes should have the same utxos in the same exact order
             assertEquals(utxos.size(),utxosOtherNode.size());
@@ -250,7 +250,7 @@ public class TransactionTests {
             List<Transaction> switchedTransactions = new ArrayList<>();
             switchedTransactions.add(otherTransactions.get(otherTransactions.size() - 1));
             switchedTransactions.add(otherTransactions.get(otherTransactions.size() - 2));
-            TransactionUtil.updateUtxos(switchedTransactions,utxos, unconfirmedTransactions); // send the 2 created transactions to first node
+            TransactionUtil.updateUtxos(switchedTransactions,utxos); // send the 2 created transactions to first node
 
             // The value in the UTXO's and the owner must be the receiver
             Integer[] firstUtxos = {2,3,3,4};

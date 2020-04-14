@@ -62,11 +62,7 @@ public class CreateBlockThread implements Runnable {
         blockchain.add(block);
 
         // send the block to all our peers
-        Thread thread = new Thread(){
-            public void run(){
-                NetUtil.sendBlockToAllPeers(block, vNodes);
-            }
-        };
+        Thread thread = new Thread(() -> NetUtil.sendBlockToAllPeers(block, vNodes));
         thread.start();
 
         // Add the block to the database
