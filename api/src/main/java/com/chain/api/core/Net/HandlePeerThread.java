@@ -182,11 +182,11 @@ public class HandlePeerThread implements Runnable{
 
             // remove the unconfirmed transactions
             TransactionUtil.updateUnconfirmedTransactions(unspentTransactionOutputs,unconfirmedTransactions.getTransactions());
-        }
 
-        // 3. send it to all the known peers
-        Thread thread = new Thread(() -> NetUtil.sendBlockToAllPeers(block, vNodes));
-        thread.start();
+            // 3. send it to all the known peers
+            Thread thread = new Thread(() -> NetUtil.sendBlockToAllPeers(block, vNodes));
+            thread.start();
+        }
     }
 
     public void handleBlockchain(List<Block> receivedBlochain) {
