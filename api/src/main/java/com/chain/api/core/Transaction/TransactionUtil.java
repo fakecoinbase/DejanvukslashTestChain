@@ -35,7 +35,7 @@ public class TransactionUtil {
     public static boolean lockTransactionInputs(PrivateKey sender, List<TransactionInput> inputs, String TXID, List<UTXO> userUTXOs) {
         for(int i = 0; i < inputs.size(); i++) {
             TransactionInput txi = inputs.get(i);
-            // find the UTXO it refferences
+            // find the UTXO it references
             UTXO tempUtxo = userUTXOs.stream().filter(utxo -> utxo.getPreviousTx().equals(txi.getPreviousTx()) && utxo.getIndex() == txi.getIndex()).findAny().orElse(null);
             if(tempUtxo == null) {
                 System.out.println("Input doesn't match output!");
@@ -143,7 +143,7 @@ public class TransactionUtil {
         }
 
         // 3. remove the consumed TXO's from the blocksTXOs
-
+        /* step removed because unconfirmed transactions aren't supported atm
         for(int i = 0; i < blocksTXOs.size(); i++) {
             UTXO utxo = blocksTXOs.get(i);
             for(int j = 0; j < consTXOs.size(); j++) {
@@ -156,6 +156,8 @@ public class TransactionUtil {
                 }
             }
         }
+
+         */
 
         // 4. add the new UTXO's blocksTXO's to the currentUTXOs
         currentUTXOs.addAll(blocksTXOs);
@@ -389,12 +391,14 @@ public class TransactionUtil {
             );
 
             // add the new TXO's in UTXO's after we get txid
+            /* step removed as utxo's are updated once tx is mined
             if(utxos != null) {
                 for(int i = 0; i < outputs.size(); i++) {
                     TransactionOutput tempTo = outputs.get(i);
                     utxos.add(new UTXO(transaction.getTXID(),i,tempTo.getTo(),tempTo.getValue()));
                 }
             }
+            */
 
             return transaction;
 
@@ -409,6 +413,16 @@ public class TransactionUtil {
     }
 
     /**
+     * removes the UTXO's used as input and adds the new TXO created as UTXO's
+     * used after the block was mined
+     * @param transaction
+     * @param utxos
+     */
+    public static void confirmTransaction(Transaction transaction , List<UTXO> utxos) {
+
+    }
+
+    /**
      *
      * @param from private key of sender
      * @param to public key of receiver
@@ -417,13 +431,35 @@ public class TransactionUtil {
      * @param blockHeight the index of the block from were the transaction is found
      * @return Transaction or null if the creation failed
      */
-    public static Transaction createTransaction(String from, String to, float value, List<UTXO> utxos, Integer blockHeight) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
+    public static Transaction createTransaction(String from, String to, float value, List<UTXO> utxos,UnconfirmedTransactions unconfirmedTransactions, Integer blockHeight)
+            throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
         Transaction transaction = null;
         PublicKey fromKey = CryptoUtil.DerivePubKeyFromPrivKey((BCECPrivateKey) CryptoUtil.getPrivateKeyFromString(from));
         PublicKey toKey = CryptoUtil.getPublicKeyFromString(to);
 
         // get user's specific UTXO
         List<UTXO> usersUtxos = getUserUtxos(fromKey, utxos);
+
+        // get only the UTXO's that are not used by user's unconfirmed transactions
+        // in this way a user can make multiple transactions without having to wait for someone to mine the previous one
+
+        List<Transaction> unconfirmedTxs = unconfirmedTransactions.getTransactions();
+
+        List<TransactionInput> unnconfirmedTxsTxins = new ArrayList<>(); // list of all the inputs of our unconfirmed transaction
+        unconfirmedTxs.stream().forEach(unconfirmedTx -> unnconfirmedTxsTxins.addAll(unconfirmedTx.getInputs()));
+
+        for(int i = 0; i < usersUtxos.size(); i++) {
+            UTXO utxo = usersUtxos.get(i);
+            for(int j = 0; j < unnconfirmedTxsTxins.size(); j++) {
+                TransactionInput txi = unnconfirmedTxsTxins.get(j);
+                if(utxo.getPreviousTx().equals(txi.getPreviousTx()) && utxo.getIndex().equals(txi.getIndex())) {
+                    usersUtxos.remove(i);
+                    i--;
+                    // the txi can also be removed for faster speed as it can only refer to a single utxo
+                    break;
+                }
+            }
+        }
 
         // find UTXO's that add up to >= value
         List<UTXO> utxostoBeRemoved = new ArrayList<>();
@@ -465,17 +501,19 @@ public class TransactionUtil {
                 outputs);
 
         // add the new TXO's in UTXO's after we got TXID
-
+        // step removed as they will only be added to UTXO's after they were mined!
+        /*
         for(int i = 0; i < outputs.size(); i++) {
             TransactionOutput tempTo = outputs.get(i);
             utxos.add(new UTXO(transaction.getTXID(),i,tempTo.getTo(),tempTo.getValue()));
         }
+        */
 
-        // sign TXI's after adding the new UTXO
+        // sign TXI's
         lockTransactionInputs((BCECPrivateKey) CryptoUtil.getPrivateKeyFromString(from),inputs,transaction.getTXID(),utxos);
 
-        // remove the spent UTXO's used as inputs AFTER locking else locking check will fail since the referenced UTXO's by inputs will not be found!
-        // OR search the inputs refferences in the blockchain
+        // remove the spent UTXO's used as inputs
+        /*
         for(int i = 0; i < utxos.size();i++) {
             UTXO currentUTXO = utxos.get(i);
             for(int k = 0; k < utxostoBeRemoved.size(); k++) {
@@ -487,6 +525,7 @@ public class TransactionUtil {
                 }
             }
         }
+         */
 
         // return the transaction
         return transaction;
@@ -494,7 +533,6 @@ public class TransactionUtil {
 
     /**
      *
-     * @param local true if the transaction was made by the node , false if the transaction was received from a peer
      * @param transaction
      * @param blockchain
      * @param unspentTransactionOutputs
