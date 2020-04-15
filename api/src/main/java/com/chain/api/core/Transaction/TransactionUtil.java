@@ -500,35 +500,33 @@ public class TransactionUtil {
                 inputs,
                 outputs);
 
-        // add the new TXO's in UTXO's after we got TXID
-        // step removed as they will only be added to UTXO's after they were mined!
-        /*
-        for(int i = 0; i < outputs.size(); i++) {
-            TransactionOutput tempTo = outputs.get(i);
-            utxos.add(new UTXO(transaction.getTXID(),i,tempTo.getTo(),tempTo.getValue()));
-        }
-        */
-
         // sign TXI's
         lockTransactionInputs((BCECPrivateKey) CryptoUtil.getPrivateKeyFromString(from),inputs,transaction.getTXID(),utxos);
 
-        // remove the spent UTXO's used as inputs
-        /*
-        for(int i = 0; i < utxos.size();i++) {
-            UTXO currentUTXO = utxos.get(i);
-            for(int k = 0; k < utxostoBeRemoved.size(); k++) {
-                UTXO consumedUTXO = utxostoBeRemoved.get(k);
-                if(currentUTXO.getPreviousTx() == consumedUTXO.getPreviousTx() && currentUTXO.getIndex() == consumedUTXO.getIndex()) {
-                    utxos.remove(i);
-                    i--;
-                    break;
+        // return the transaction
+        return transaction;
+    }
+
+    public static void updateUnconfirmedTransactions(List<UTXO> utxos, List<Transaction> unconfirmedTransactions) {
+        for(int i = 0; i < unconfirmedTransactions.size(); i++) {
+            Transaction currentTx = unconfirmedTransactions.get(i);
+            List<TransactionInput> unconfirmedTxInputs = currentTx.getInputs();
+            for(int j = 0; j < unconfirmedTxInputs.size(); j++) {
+                TransactionInput txi = unconfirmedTxInputs.get(j);
+                boolean found = false;
+                for(int k = 0; k < utxos.size(); k++) {
+                    UTXO utxo = utxos.get(k);
+                    if(txi.getPreviousTx().equals(utxo.getPreviousTx()) && txi.getIndex().equals(utxo.getIndex())) {
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found) {
+                    // remove the unconfirmed transaction
+
                 }
             }
         }
-         */
-
-        // return the transaction
-        return transaction;
     }
 
     /**

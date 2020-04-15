@@ -45,21 +45,14 @@ public class CreateBlockThread implements Runnable {
 
         mineBlock(block, blockHeight);
 
-        // remove the mined unconfirmed transactions
-        for(int i = 0; i < unconfirmedTransactions.size(); i++) {
-            Transaction transaction = unconfirmedTransactions.get(i);
-            for(int j = 0; j < transactions.size(); j++) {
-                Transaction minedTransaction = transactions.get(j);
-                if(transaction.getTXID() == minedTransaction.getTXID()) {
-                    unconfirmedTransactions.remove(i);
-                    i--;
-                    break;
-                }
-            }
-        }
-
         // Add the block to the blockchain
         blockchain.add(block);
+
+        // add the new TXO as UTXO and remove the used UTXO as TXIs
+        TransactionUtil.updateUtxos(transactions,utxos);
+
+        // remove the unconfirmed transactions
+        TransactionUtil.updateUnconfirmedTransactions(utxos,unconfirmedTransactions);
 
         // send the block to all our peers
         Thread thread = new Thread(() -> NetUtil.sendBlockToAllPeers(block, vNodes));

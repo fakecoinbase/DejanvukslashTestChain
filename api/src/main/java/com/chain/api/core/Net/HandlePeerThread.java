@@ -155,28 +155,6 @@ public class HandlePeerThread implements Runnable{
             }
         }
 
-        // 2. Remove the unconfirmed transactions that refer to
-        // inputs refered by the transactions of the received block
-        // or that are part of the received block
-
-        // first update the utxo's
-        TransactionUtil.updateUtxos(validTransactions, utxos);
-
-        List<Transaction> unconfirmedTxs = unconfirmedTransactions.getTransactions();
-
-        for(int i = 0; i < unconfirmedTxs .size(); i++) {
-            Transaction currTx = unconfirmedTxs.get(i);
-            List<TransactionInput> currTxi = currTx.getInputs();
-            // if any of the block's valid transactions references any of currTx inputs then remove currTx from unconfirmedTransactions
-            for(int j = 0; j < validTransactions.size(); j++) {
-                Transaction validTx = validTransactions.get(j);
-                List<TransactionInput> validTxi = validTx.getInputs();
-                for(int k = 0; k < validTxi.size(); k++) {
-                    if()
-                }
-            }
-        }
-
         // 3. add the block to the blockchain
 
         // if prevHash doesnt match our latest block then we have to query the peer for all his blockchain
@@ -201,6 +179,9 @@ public class HandlePeerThread implements Runnable{
             // add the validated block to the tree
             blockchain.add(block);
             TransactionUtil.updateUtxos(block.getTransactions(),unspentTransactionOutputs);
+
+            // remove the unconfirmed transactions
+            TransactionUtil.updateUnconfirmedTransactions(unspentTransactionOutputs,unconfirmedTransactions.getTransactions());
         }
 
         // 3. send it to all the known peers
