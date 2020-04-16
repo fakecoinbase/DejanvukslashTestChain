@@ -45,6 +45,7 @@ public class ListenThread implements Runnable {
                 vNodes.add(peer);
 
                 // ask the new peer for his list of peers
+                NetUtil.sendGetAddrMessageToPeer(peer);
 
             } catch (IOException e) {
                 // log "Error accepting peer!";

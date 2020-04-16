@@ -431,7 +431,7 @@ public class TransactionUtil {
      * @param blockHeight the index of the block from were the transaction is found
      * @return Transaction or null if the creation failed
      */
-    public static Transaction createTransaction(String from, String to, float value, List<UTXO> utxos,UnconfirmedTransactions unconfirmedTransactions, Integer blockHeight)
+    public static Transaction createTransaction(String from, String to, float value, List<UTXO> utxos,List<Transaction> unconfirmedTransactions, Integer blockHeight)
             throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
         Transaction transaction = null;
         PublicKey fromKey = CryptoUtil.DerivePubKeyFromPrivKey((BCECPrivateKey) CryptoUtil.getPrivateKeyFromString(from));
@@ -443,10 +443,8 @@ public class TransactionUtil {
         // get only the UTXO's that are not used by user's unconfirmed transactions
         // in this way a user can make multiple transactions without having to wait for someone to mine the previous one
 
-        List<Transaction> unconfirmedTxs = unconfirmedTransactions.getTransactions();
-
         List<TransactionInput> unnconfirmedTxsTxins = new ArrayList<>(); // list of all the inputs of our unconfirmed transaction
-        unconfirmedTxs.stream().forEach(unconfirmedTx -> unnconfirmedTxsTxins.addAll(unconfirmedTx.getInputs()));
+        unconfirmedTransactions.stream().forEach(unconfirmedTx -> unnconfirmedTxsTxins.addAll(unconfirmedTx.getInputs()));
 
         for(int i = 0; i < usersUtxos.size(); i++) {
             UTXO utxo = usersUtxos.get(i);
@@ -540,9 +538,6 @@ public class TransactionUtil {
      * @param vNodes
      */
     public static void handleTransaction(Transaction transaction, List<Block> blockchain, List<UTXO> unspentTransactionOutputs, UnconfirmedTransactions unconfirmedTransactions, List<CreateBlockThread> threadList, PublicKey publicKey, List<CNode> vNodes) {
-        // first update the utxos
-        updateUtxos(transaction,unspentTransactionOutputs,unconfirmedTransactions);
-
         // if the block is full mine and send it to all peers
         if(unconfirmedTransactions.getTransactions().size() >= 3500) {
             // generate a new block with the unconfirmed transactions
@@ -557,6 +552,10 @@ public class TransactionUtil {
                     vNodes
             );
             threadList.add(createBlockThread);
+        }
+        else {
+            // add the transaction to the unconfirmed
+            unconfirmedTransactions.getTransactions().add(transaction);
         }
 
         // send the transaction to all of our known peers

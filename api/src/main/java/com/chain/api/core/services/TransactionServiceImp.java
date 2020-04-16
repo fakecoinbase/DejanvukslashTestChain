@@ -59,7 +59,7 @@ public class TransactionServiceImp implements TransactionService {
     @Override
     public Transaction createTransaction(TransactionPayload payload) {
         try {
-            Transaction transaction = TransactionUtil.createTransaction(payload.getFrom(), payload.getTo(), payload.getValue(), unspentTransactionOutputs, blockchain.size());
+            Transaction transaction = TransactionUtil.createTransaction(payload.getFrom(), payload.getTo(), payload.getValue(), unspentTransactionOutputs, unconfirmedTransactions.getTransactions(), blockchain.size());
 
             Objects.requireNonNull(transaction, "transaction can't be null!");
 

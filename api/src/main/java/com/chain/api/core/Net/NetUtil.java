@@ -78,7 +78,7 @@ public class NetUtil {
                 Socket socket = peer.getSocket();
                 InetAddress addr = socket.getInetAddress();
                 int         port = socket.getPort();
-                return addr.getHostAddress() + " : " + Integer.toString(port);
+                return addr.getHostAddress() + ":" + Integer.toString(port);
             }).collect(Collectors.toList());
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(toPeer.getSocket().getOutputStream());

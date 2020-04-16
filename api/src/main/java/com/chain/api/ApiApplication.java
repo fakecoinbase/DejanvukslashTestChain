@@ -28,7 +28,9 @@ public class ApiApplication {
 
     @Bean
     @Scope("singleton")
-    public List<Block> blockchain() { return new ArrayList<Block>(); }
+    public List<Block> blockchain() {
+        return new ArrayList<Block>();
+    }
 
     @Bean
     @Scope("singleton")
