@@ -190,13 +190,10 @@ public class BlockUtil {
                 + block.getNonce()));
     }
 
-    public static Block generateEmptyBlock(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight) {
-        Block blockToBeMined = new Block(prevBlock, null);
-        // add reward/coinbase  transaction to the miner's wallet
-        Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(nodeOwner),5, utxos, blockHeight);
-        blockToBeMined.addTransaction(coinbaseTransaction);
-
-        return blockToBeMined;
+    public static void generateEmptyBlock(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight, List<Transaction> unconfirmedTransactions, List<Block> blockchain, List<CNode> vNodes) {
+        CreateBlockThread createBlockThread = new CreateBlockThread(prevBlock, nodeOwner, utxos, blockHeight, null, unconfirmedTransactions, blockchain, vNodes);
+        Thread mineBlockThread = new Thread(createBlockThread);
+        mineBlockThread.start();
     }
 
     public static CreateBlockThread generateBlockWithTransaction(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight, List<Transaction> transactions, List<Transaction> unconfirmedTransactions, List<Block> blockchain, List<CNode> vNodes) {

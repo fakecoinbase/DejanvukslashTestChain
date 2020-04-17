@@ -359,10 +359,9 @@ public class TransactionUtil {
      * Create a Coinbase transaction with no inputs
      * @param to owner of the miner
      * @param value constant
-     * @param utxos
      * @return Transaction or null if the creation failed
      */
-    public static Transaction createCoinbaseTransaction(String to, float value, List<UTXO> utxos, Integer blockHeight) {
+    public static Transaction createCoinbaseTransaction(String to, float value, Integer blockHeight) {
         Transaction transaction = null;
         try {
             PublicKey toKey = CryptoUtil.getPublicKeyFromString(to);
@@ -505,6 +504,12 @@ public class TransactionUtil {
         return transaction;
     }
 
+
+    /**
+     * Simply for every unconfirmed transaction check if the inputs refer to existing utxo's, if not remove the unconfirmed transaction.
+     * @param utxos
+     * @param unconfirmedTransactions
+     */
     public static void updateUnconfirmedTransactions(List<UTXO> utxos, List<Transaction> unconfirmedTransactions) {
         for(int i = 0; i < unconfirmedTransactions.size(); i++) {
             Transaction currentTx = unconfirmedTransactions.get(i);
@@ -520,12 +525,14 @@ public class TransactionUtil {
                     }
                 }
                 if(!found) {
-                    // remove the unconfirmed transaction
-
+                    unconfirmedTransactions.remove(i);
+                    i--;
+                    break;
                 }
             }
         }
     }
+
 
     /**
      *

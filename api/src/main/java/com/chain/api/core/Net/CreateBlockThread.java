@@ -66,7 +66,7 @@ public class CreateBlockThread implements Runnable {
         Block blockToBeMined = new Block(prevBlock, null);
 
         // add reward/coinbase  transaction to the miner's wallet
-        Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(nodeOwner),5, utxos, blockHeight);
+        Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(nodeOwner),5, blockHeight);
         blockToBeMined.addTransaction(coinbaseTransaction);
         blockToBeMined.getTransactions().addAll(transactions);
 
