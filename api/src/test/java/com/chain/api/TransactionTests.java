@@ -80,37 +80,40 @@ public class TransactionTests {
     @Test
     public void verifyTransaction() {
         // Sender mines a block to get some coins
+        List<Transaction> transactions = new ArrayList<>();
         Transaction transaction1 = TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeySender),5, 0);
-        /*
-        System.out.println("Before sending a transaction");
-        utxos.stream().forEach(utxo -> {
-            System.out.println("owner:" + CryptoUtil.getStringFromKey(utxo.getOwner()) + " value:" + utxo.getValue());
-        });
-        */
+        transactions.add(transaction1);
+        TransactionUtil.updateUtxos(transactions,utxos);
+        TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
         assertTrue(utxos.size() == 1);
         assertEquals(CryptoUtil.getStringFromKey(utxos.get(0).getOwner()),CryptoUtil.getStringFromKey(publicKeySender));
 
         // Send 5 coins to receiver
         try {
             Transaction transaction2 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender), CryptoUtil.getStringFromKey(publicKeyReceiver),5,utxos,unconfirmedTransactionsSender.getTransactions(), 0);
+            unconfirmedTransactionsSender.getTransactions().add(transaction2);
+
+            TransactionUtil.updateUtxos(unconfirmedTransactionsSender.getTransactions(),utxos);
+            TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
             assertTrue(utxos.size() == 1);
-            assertTrue(unconfirmedTransactionsSender.getTransactions().size() == 1);
+            assertTrue(unconfirmedTransactionsSender.getTransactions().size() == 0);
             assertEquals(CryptoUtil.getStringFromKey(utxos.get(0).getOwner()),CryptoUtil.getStringFromKey(publicKeyReceiver));
 
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchProviderException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        }
+            // Send 5 coins back to sender
 
-        // Send 5 coins back to sender
-        try {
             Transaction transaction3 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeyReceiver), CryptoUtil.getStringFromKey(publicKeySender),5,utxos,unconfirmedTransactionsSender.getTransactions(), 0);
+            unconfirmedTransactionsSender.getTransactions().add(transaction3);
+
+            TransactionUtil.updateUtxos(unconfirmedTransactionsSender.getTransactions(),utxos);
+            TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
+
             assertTrue(utxos.size() == 1);
-            assertTrue(unconfirmedTransactionsSender.getTransactions().size() == 2);
+            assertTrue(unconfirmedTransactionsSender.getTransactions().size() == 0);
             assertEquals(CryptoUtil.getStringFromKey(utxos.get(0).getOwner()),CryptoUtil.getStringFromKey(publicKeySender));
+
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (NoSuchProviderException e) {
@@ -122,7 +125,7 @@ public class TransactionTests {
         // Send 6 coins to receiver when sender has only 5
         RuntimeException exception = assertThrows(RuntimeException.class, () -> TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender), CryptoUtil.getStringFromKey(publicKeyReceiver),6,utxos,unconfirmedTransactionsSender.getTransactions(),0));
         assertEquals("Sender does not have enough funds", exception.getMessage());
-        assertTrue(unconfirmedTransactionsSender.getTransactions().size() == 2);
+        assertTrue(unconfirmedTransactionsSender.getTransactions().size() == 0);
 
     }
 
@@ -134,16 +137,69 @@ public class TransactionTests {
         List<Transaction> transactions = new ArrayList<>();
         // Create 3 transactions of 12 coins total to sender
         transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeySender),5, 0));
+
+        TransactionUtil.updateUtxos(transactions,utxos);
+        TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
+        TransactionUtil.updateUtxos(transactions,utxosOtherNode);
+        TransactionUtil.updateUnconfirmedTransactions(utxosOtherNode, unconfirmedTransactionsReceiver.getTransactions());
+
+        transactions = new ArrayList<>();
+
         transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeySender),4, 0));
+
+        TransactionUtil.updateUtxos(transactions,utxos);
+        TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
+        TransactionUtil.updateUtxos(transactions,utxosOtherNode);
+        TransactionUtil.updateUnconfirmedTransactions(utxosOtherNode, unconfirmedTransactionsReceiver.getTransactions());
+
+        transactions = new ArrayList<>();
+
         transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeySender),3, 0));
+
+        TransactionUtil.updateUtxos(transactions,utxos);
+        TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
+        TransactionUtil.updateUtxos(transactions,utxosOtherNode);
+        TransactionUtil.updateUnconfirmedTransactions(utxosOtherNode, unconfirmedTransactionsReceiver.getTransactions());
+
+        transactions = new ArrayList<>();
 
         // Create 2 transactions of 17 coins total to receiver
         transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeyReceiver),9, 0));
+
+        TransactionUtil.updateUtxos(transactions,utxos);
+        TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
+        TransactionUtil.updateUtxos(transactions,utxosOtherNode);
+        TransactionUtil.updateUnconfirmedTransactions(utxosOtherNode, unconfirmedTransactionsReceiver.getTransactions());
+
+        transactions = new ArrayList<>();
+
         transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeyReceiver),8, 0));
 
+        TransactionUtil.updateUtxos(transactions,utxos);
+        TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
+        TransactionUtil.updateUtxos(transactions,utxosOtherNode);
+        TransactionUtil.updateUnconfirmedTransactions(utxosOtherNode, unconfirmedTransactionsReceiver.getTransactions());
+
         try {
+
+            transactions = new ArrayList<>();
+
             // Try sending 2 coins from sender to receiver
-            transactions.add(TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 2, utxos,unconfirmedTransactionsSender.getTransactions(), 0));
+            Transaction trans1 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 2, utxos,unconfirmedTransactionsSender.getTransactions(), 1);
+            unconfirmedTransactionsSender.getTransactions().add(trans1);
+
+            TransactionUtil.updateUtxos(unconfirmedTransactionsSender.getTransactions(),utxos);
+            TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
+            transactions.add(trans1);
+
+            TransactionUtil.updateUtxos(transactions,utxosOtherNode);
+            TransactionUtil.updateUnconfirmedTransactions(utxosOtherNode, unconfirmedTransactionsReceiver.getTransactions());
 
             // the first transaction of 5 coins was split in 2 coins that were sent to receiver and 3 coins that were sent back to sender
             // so sender has 3 utxos and receiver received 1 extra utxo,making it 3
@@ -153,8 +209,19 @@ public class TransactionTests {
             assertEquals(12 - 2, TransactionUtil.getUsersBalance(TransactionUtil.getUserUtxos(publicKeySender,utxos)));
             assertEquals(17 + 2, TransactionUtil.getUsersBalance(TransactionUtil.getUserUtxos(publicKeyReceiver,utxos)));
 
-            // Try sending all 19 coins of receiver to third user
-            transactions.add(TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeyReceiver),CryptoUtil.getStringFromKey(publicKeyThirdUser), 19, utxos,unconfirmedTransactionsSender.getTransactions(), 0));
+            // Try sending all 19 coins of receiver to third user from the second node
+            transactions = new ArrayList<>();
+
+            Transaction trans2 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeyReceiver),CryptoUtil.getStringFromKey(publicKeyThirdUser), 19, utxosOtherNode,unconfirmedTransactionsReceiver.getTransactions(), 2);
+            unconfirmedTransactionsReceiver.getTransactions().add(trans2);
+
+            TransactionUtil.updateUtxos(unconfirmedTransactionsReceiver.getTransactions(),utxosOtherNode);
+            TransactionUtil.updateUnconfirmedTransactions(utxosOtherNode, unconfirmedTransactionsReceiver.getTransactions());
+
+            transactions.add(trans2);
+
+            TransactionUtil.updateUtxos(transactions,utxos);
+            TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
 
             assertEquals(3, TransactionUtil.getUserUtxos(publicKeySender,utxos).size());
             assertEquals(0, TransactionUtil.getUserUtxos(publicKeyReceiver,utxos).size());
@@ -229,21 +296,30 @@ public class TransactionTests {
             transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeySender),5, 0));
 
             TransactionUtil.updateUtxos(transactions,utxos);
+            TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
             TransactionUtil.updateUtxos(transactions,utxosOtherNode);
+            TransactionUtil.updateUnconfirmedTransactions(utxosOtherNode, unconfirmedTransactionsReceiver.getTransactions());
 
             transactions = new ArrayList<>();
 
             transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeySender),4, 0));
 
             TransactionUtil.updateUtxos(transactions,utxos);
+            TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
             TransactionUtil.updateUtxos(transactions,utxosOtherNode);
+            TransactionUtil.updateUnconfirmedTransactions(utxosOtherNode, unconfirmedTransactionsReceiver.getTransactions());
 
             transactions = new ArrayList<>();
 
             transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeySender),3, 0));
 
             TransactionUtil.updateUtxos(transactions,utxos);
+            TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
             TransactionUtil.updateUtxos(transactions,utxosOtherNode);
+            TransactionUtil.updateUnconfirmedTransactions(utxosOtherNode, unconfirmedTransactionsReceiver.getTransactions());
 
             //----------------create 2 transactions on second node------------------//
 
@@ -263,7 +339,7 @@ public class TransactionTests {
             TransactionUtil.updateUtxos(unconfirmedTransactionsReceiver.getTransactions(),utxosOtherNode);
             TransactionUtil.updateUnconfirmedTransactions(utxosOtherNode, unconfirmedTransactionsReceiver.getTransactions());
 
-            utxosOtherNode.stream().forEach(utxo -> System.out.println(utxo.getValue() + " owner: " + CryptoUtil.getStringFromKey(utxo.getOwner())));
+            //utxosOtherNode.stream().forEach(utxo -> System.out.println(utxo.getValue() + " owner: " + CryptoUtil.getStringFromKey(utxo.getOwner())));
 
             assertEquals(utxos.size(), 3);
             assertEquals(utxosOtherNode.size(), 5);
@@ -273,6 +349,7 @@ public class TransactionTests {
             transactions.add(trans2);
 
             TransactionUtil.updateUtxos(transactions,utxos);
+            TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
 
             assertEquals(utxos.size(), 5);
 
@@ -286,10 +363,6 @@ public class TransactionTests {
             trans1 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 3, utxosOtherNode,unconfirmedTransactionsReceiver.getTransactions(),  2);
             unconfirmedTransactionsReceiver.getTransactions().add(trans1);
 
-            // the transaction was mined
-            TransactionUtil.updateUtxos(unconfirmedTransactionsReceiver.getTransactions(),utxosOtherNode);
-            TransactionUtil.updateUnconfirmedTransactions(utxosOtherNode, unconfirmedTransactionsReceiver.getTransactions());
-
             trans2 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 4, utxosOtherNode,unconfirmedTransactionsReceiver.getTransactions(),  2);
             unconfirmedTransactionsReceiver.getTransactions().add(trans2);
 
@@ -301,6 +374,7 @@ public class TransactionTests {
             otherTransactions.add(trans2);
 
             TransactionUtil.updateUtxos(otherTransactions,utxos);
+            TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
 
             assertEquals(utxos.size(), 4);
             assertEquals(utxosOtherNode.size(), 4);
@@ -330,25 +404,56 @@ public class TransactionTests {
         List<Transaction> transactions = new ArrayList<>();
         // Create 3 transactions of 12 coins total to sender
         transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeySender),5, 0));
+
+        TransactionUtil.updateUtxos(transactions,utxos);
+        TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
+        transactions = new ArrayList<>();
+
         transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeySender),4, 0));
+
+        TransactionUtil.updateUtxos(transactions,utxos);
+        TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
+        transactions = new ArrayList<>();
+
         transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeySender),3, 0));
 
-        // Create 2 transactions of 3 coins total to receiver
-        transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeyReceiver),2, 0));
-        transactions.add(TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(publicKeyReceiver),1, 0));
+        TransactionUtil.updateUtxos(transactions,utxos);
+        TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
 
+        transactions = new ArrayList<>();
+
+
+        // Create 2 transactions of 3 coins total to receiver
+        try {
+            unconfirmedTransactionsSender.getTransactions().add(TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 2, utxos,unconfirmedTransactionsSender.getTransactions(),  1));
+            unconfirmedTransactionsSender.getTransactions().add(TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 1, utxos,unconfirmedTransactionsSender.getTransactions(),  1));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+
+
+        // utxo's are only updated after the transaction was mined
         List<UTXO> userUtxos = TransactionUtil.getUserUtxos(publicKeySender,utxos);
         Float value = TransactionUtil.getUsersBalance(userUtxos);
 
-        // utxo's are only updated after the transaction was mined
-        assertEquals(0,userUtxos.size());
-        assertEquals(0,value);
+        assertEquals(3,userUtxos.size());
+        assertEquals(12,value);
 
-        userUtxos = TransactionUtil.getUserUtxos(publicKeyReceiver,utxos);
+        // mine the block
+        TransactionUtil.updateUtxos(unconfirmedTransactionsSender.getTransactions(),utxos);
+        TransactionUtil.updateUnconfirmedTransactions(utxos, unconfirmedTransactionsSender.getTransactions());
+
+        userUtxos = TransactionUtil.getUserUtxos(publicKeySender,utxos);
         value = TransactionUtil.getUsersBalance(userUtxos);
 
-        assertEquals(0,0);
-        assertEquals(0,0);
+        assertEquals(3,userUtxos.size());
+        assertEquals(9,value);
 
     }
 }
