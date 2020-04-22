@@ -41,37 +41,41 @@ public class CreateBlockThread implements Runnable {
 
     @Override
     public void run() {
-        Block block = generateBlock(prevBlock, nodeOwnder, utxos, blockHeight, transactions);
+        Block block = generateBlock(prevBlock, nodeOwnder, blockHeight, transactions);
 
         mineBlock(block, blockHeight);
 
         // Add the block to the blockchain
         blockchain.add(block);
 
-        // add the new TXO as UTXO and remove the used UTXO as TXIs
-        TransactionUtil.updateUtxos(transactions,utxos);
+        if(blockHeight != 0 && unconfirmedTransactions != null) { // there are no transactions in genesis and genesis coinbase can't be spent
+            // add the new TXO as UTXO and remove the used UTXO as TXIs
+            TransactionUtil.updateUtxos(block.getTransactions(),utxos);
 
-        // remove the unconfirmed transactions
-        TransactionUtil.updateUnconfirmedTransactions(utxos,unconfirmedTransactions);
+            // remove the unconfirmed transactions
+            TransactionUtil.updateUnconfirmedTransactions(utxos,unconfirmedTransactions);
 
-        // send the block to all our peers
-        Thread thread = new Thread(() -> NetUtil.sendBlockToAllPeers(block, vNodes));
-        thread.start();
+            // send the block to all our peers
+            Thread thread = new Thread(() -> NetUtil.sendBlockToAllPeers(block, vNodes));
+            thread.start();
 
-        // Add the block to the database
+            // Add the block to the database
 
+        }
     }
 
-    private Block generateBlock(Block prevBlock, PublicKey nodeOwner, List<UTXO> utxos, int blockHeight, List<Transaction> transactions) {
+    private Block generateBlock(Block prevBlock, PublicKey nodeOwner, int blockHeight, List<Transaction> transactions) {
         Block blockToBeMined = new Block(prevBlock, null);
 
         // add reward/coinbase  transaction to the miner's wallet
-        Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(nodeOwner),5, blockHeight);
+        Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(nodeOwner),50, blockHeight);
         blockToBeMined.addTransaction(coinbaseTransaction);
-        blockToBeMined.getTransactions().addAll(transactions);
+        if(transactions != null) blockToBeMined.getTransactions().addAll(transactions);
 
         // generate the merkle root
-        blockToBeMined.setMerkleRoot(BlockUtil.generateMerkleRoot(transactions));
+        blockToBeMined.setMerkleRoot(BlockUtil.generateMerkleRoot(blockToBeMined.getTransactions()));
+
+        BlockUtil.generateHash(blockToBeMined);
 
         return blockToBeMined;
     }

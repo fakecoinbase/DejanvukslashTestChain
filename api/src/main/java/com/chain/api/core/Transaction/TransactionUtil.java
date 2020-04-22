@@ -4,7 +4,7 @@ import com.chain.api.core.Block.Block;
 import com.chain.api.core.Block.BlockUtil;
 import com.chain.api.core.Crypto.CryptoUtil;
 import com.chain.api.core.Net.CNode;
-import com.chain.api.core.Net.CreateBlockThread;
+import com.chain.api.core.Net.MiningTask;
 import com.chain.api.core.Net.NetUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 
@@ -273,13 +273,13 @@ public class TransactionUtil {
                         transaction.getValue(),
                         blockHeight))) {
             System.out.println("Transaction has an invalid id!");
-            return true;
+            return false;
         }
 
         // Validate the transaction inputs
         if(!verifyTransactionInputs(transaction.getSender(),transaction.getInputs(), transaction.getTXID())) {
-            System.out.println("");
-            return true;
+            System.out.println("Invalid transaction inputs!");
+            return false;
         }
 
         // the value of TXI's must be equivalent to the value of TXO's
@@ -289,14 +289,14 @@ public class TransactionUtil {
 
         if(txInTotalValue != txOutTotalValue) {
             System.out.println("Outputs and Inputs total values dont match!");
-            return true;
+            return false;
         }
 
         // other validations
 
         // Note: verifying that none of the transaction's inputs have been previously spent is not neccesary
 
-        return false;
+        return true;
     }
 
     public static boolean verifyCoinbaseTransaction(Transaction coinbase,Integer blockHeight) {
@@ -540,15 +540,24 @@ public class TransactionUtil {
      * @param blockchain
      * @param unspentTransactionOutputs
      * @param unconfirmedTransactions
-     * @param threadList
      * @param publicKey
      * @param vNodes
      */
-    public static void handleTransaction(Transaction transaction, List<Block> blockchain, List<UTXO> unspentTransactionOutputs, UnconfirmedTransactions unconfirmedTransactions, List<CreateBlockThread> threadList, PublicKey publicKey, List<CNode> vNodes) {
+    public static void handleTransaction(Transaction transaction, List<Block> blockchain, List<UTXO> unspentTransactionOutputs, UnconfirmedTransactions unconfirmedTransactions, List<MiningTask> miningTaskList, PublicKey publicKey, List<CNode> vNodes) {
+
+        Objects.requireNonNull(transaction, "received null transaction!");
+
+        if(!verifyTransaction(transaction, blockchain, blockchain.size())) {
+            System.out.println("The transaction is invalid!");
+            return;
+        }
+
+        unconfirmedTransactions.getTransactions().add(transaction);
+
         // if the block is full mine and send it to all peers
-        if(unconfirmedTransactions.getTransactions().size() >= 3500) {
+        if(unconfirmedTransactions.getTransactions().size() >= 4) {
             // generate a new block with the unconfirmed transactions
-            CreateBlockThread createBlockThread = BlockUtil.generateBlockWithTransaction(
+            MiningTask miningTask= BlockUtil.generateBlockWithTransaction(
                     blockchain.get(blockchain.size() - 1),
                     publicKey,
                     unspentTransactionOutputs,
@@ -558,11 +567,7 @@ public class TransactionUtil {
                     blockchain,
                     vNodes
             );
-            threadList.add(createBlockThread);
-        }
-        else {
-            // add the transaction to the unconfirmed
-            unconfirmedTransactions.getTransactions().add(transaction);
+            miningTaskList.add(miningTask);
         }
 
         // send the transaction to all of our known peers

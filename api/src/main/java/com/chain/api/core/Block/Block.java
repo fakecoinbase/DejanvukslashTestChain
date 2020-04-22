@@ -37,8 +37,11 @@ public class Block {
             this.previousHash = prevBlock.getHash();
             this.index = prevBlock.getIndex() + 1;
         }
+        else { // genesis
+            this.index = 0;
+        }
         this.transactions = transactions;
-        this.difficultyTarget = 5; // read difficulty from a central config server
+        this.difficultyTarget = 3; // read difficulty from a central config server
         this.nonce = 0;
     }
 

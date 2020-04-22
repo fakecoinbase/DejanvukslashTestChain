@@ -3,6 +3,7 @@ package com.chain.api.core.Block;
 import com.chain.api.core.Crypto.CryptoUtil;
 import com.chain.api.core.Net.CNode;
 import com.chain.api.core.Net.CreateBlockThread;
+import com.chain.api.core.Net.MiningTask;
 import com.chain.api.core.Net.NetUtil;
 import com.chain.api.core.Transaction.*;
 
@@ -53,6 +54,7 @@ public class BlockUtil {
         // Verify Merkle hash
         if(!BlockUtil.generateMerkleRoot(block.getTransactions()).equals(block.getMerkleRoot())) {
             System.out.println("Merkle hash is invalid!");
+            return false;
         }
 
         // A timestamp is accepted as valid if it is greater than the median timestamp of previous 11 blocks
@@ -160,8 +162,8 @@ public class BlockUtil {
     }
 
     public static String generateMerkleRoot(List<Transaction> transactions) {
-        if(transactions.size() == 0) {
-            System.out.println("Invalid transactions list");
+        if(transactions == null || transactions.size() == 0) {
+            //System.out.println("Invalid transactions list");
             return "";
         }
         int count = transactions.size();
@@ -190,41 +192,51 @@ public class BlockUtil {
                 + block.getNonce()));
     }
 
-    public static void generateEmptyBlock(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight, List<Transaction> unconfirmedTransactions, List<Block> blockchain, List<CNode> vNodes) {
-        CreateBlockThread createBlockThread = new CreateBlockThread(prevBlock, nodeOwner, utxos, blockHeight, null, unconfirmedTransactions, blockchain, vNodes);
-        Thread mineBlockThread = new Thread(createBlockThread);
-        mineBlockThread.start();
+    public static  MiningTask generateEmptyBlock(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, List<Transaction> unconfirmedTransactions, List<Block> blockchain, List<CNode> vNodes) {
+        MiningTask miningTask = generateBlockWithTransaction(
+                prevBlock,
+                nodeOwner,
+                utxos,
+                blockchain.size(),
+                null,
+                unconfirmedTransactions,
+                blockchain,
+                vNodes);
+
+        return miningTask;
     }
 
-    public static CreateBlockThread generateBlockWithTransaction(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight, List<Transaction> transactions, List<Transaction> unconfirmedTransactions, List<Block> blockchain, List<CNode> vNodes) {
+    public static MiningTask generateBlockWithTransaction(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight, List<Transaction> transactions, List<Transaction> unconfirmedTransactions, List<Block> blockchain, List<CNode> vNodes) {
         CreateBlockThread createBlockThread = new CreateBlockThread(prevBlock, nodeOwner, utxos, blockHeight, transactions, unconfirmedTransactions, blockchain, vNodes);
         Thread mineBlockThread = new Thread(createBlockThread);
         mineBlockThread.start();
-        return createBlockThread;
+
+        return new MiningTask(mineBlockThread, createBlockThread);
+
     }
 
-    /* Genesis block will be hardcoded
-    public static Block generateGenesisBlock(PublicKey nodeOwner, int value, List<Thread> threadList) {
-        Block block = new Block(null, null);
-        Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(
-                CryptoUtil.getStringFromKey(nodeOwner),
-                value,
-                null, // genesis block coinbase transaction can't be used
-                0);
-        block.addTransaction(coinbaseTransaction);
+    // Genesis block will be hardcoded
+    public static MiningTask generateGenesisBlock(PublicKey nodeOwner, List<Block> blockchain, List<CNode> vNodes) {
+        MiningTask miningTask = generateBlockWithTransaction(
+                null,
+                nodeOwner,
+                null,
+                0,
+                null,
+                null,
+                blockchain,
+                vNodes);
 
-        //BlockUtil.mineBlock(threadList,block, nodeOwner, 0);
-
-        return block;
+        return miningTask;
     }
-    */
 
-    public static void handleBlock(Block block, List<Block> blockchain, List<UTXO> unspentTransactionOutputs, UnconfirmedTransactions unconfirmedTransactions, List<CreateBlockThread> threadList, PublicKey publicKey, List<CNode> vNodes) {
+
+    public static void handleBlock(Block block, List<Block> blockchain, List<UTXO> unspentTransactionOutputs, UnconfirmedTransactions unconfirmedTransactions, List<MiningTask> miningTaskList, PublicKey publicKey, List<CNode> vNodes) {
 
         Objects.requireNonNull(block, "received null block!");
 
         // 1. validate the received block
-        int blockHeight = blockchain.size() - 1;
+        int blockHeight = blockchain.size();
 
         if(!BlockUtil.isBlockValid(block,blockchain,block.getDifficultyTarget(),blockHeight)) {
             System.out.println("Received block is invalid!");
@@ -263,7 +275,7 @@ public class BlockUtil {
                     blockchain,
                     unspentTransactionOutputs,
                     unconfirmedTransactions,
-                    threadList,
+                    miningTaskList,
                     publicKey,
                     vNodes));
         }

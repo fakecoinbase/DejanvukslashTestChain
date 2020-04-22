@@ -3,6 +3,7 @@ package com.chain.api.core.services;
 import com.chain.api.core.Block.Block;
 import com.chain.api.core.Net.CNode;
 import com.chain.api.core.Net.CreateBlockThread;
+import com.chain.api.core.Net.MiningTask;
 import com.chain.api.core.Net.NetUtil;
 import com.chain.api.core.Transaction.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,10 +31,12 @@ public class TransactionServiceImp implements TransactionService {
 
     private List<UTXO> unspentTransactionOutputs;
 
-    private List<CreateBlockThread> threadList;
+    private List<MiningTask> miningTaskList;
 
     @Autowired
-    public void setThreadList(List<CreateBlockThread> threadList) {this.threadList = threadList;}
+    public void setMiningTaskList(List<MiningTask> miningTaskList) {
+        this.miningTaskList = miningTaskList;
+    }
 
     @Autowired
     public void setNodeOwnerKeyPair(KeyPair nodeOwnerKeyPair) { this.nodeOwnerKeyPair = nodeOwnerKeyPair; }
@@ -61,19 +64,12 @@ public class TransactionServiceImp implements TransactionService {
         try {
             Transaction transaction = TransactionUtil.createTransaction(payload.getFrom(), payload.getTo(), payload.getValue(), unspentTransactionOutputs, unconfirmedTransactions.getTransactions(), blockchain.size());
 
-            Objects.requireNonNull(transaction, "transaction can't be null!");
-
-            if(TransactionUtil.verifyTransaction(transaction, blockchain, blockchain.size())) {
-                System.out.println("The transaction is invalid!");
-                return null;
-            }
-
             TransactionUtil.handleTransaction(
                     transaction,
                     blockchain,
                     unspentTransactionOutputs,
                     unconfirmedTransactions,
-                    threadList,
+                    miningTaskList,
                     nodeOwnerKeyPair.getPublic(),
                     vNodes);
 

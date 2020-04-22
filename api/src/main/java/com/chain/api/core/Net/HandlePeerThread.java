@@ -26,10 +26,10 @@ public class HandlePeerThread implements Runnable{
 
     private List<UTXO> unspentTransactionOutputs;
 
-    private List<CreateBlockThread> threadList;
+    private List<MiningTask> miningTaskList;
 
     @Autowired
-    public void setThreadList(List<CreateBlockThread> threadList) {this.threadList = threadList;}
+    public void setMiningTaskList(List<MiningTask> miningTaskList) {this.miningTaskList = miningTaskList;}
 
     @Autowired
     public void setNodeOwnerKeyPair(KeyPair nodeOwnerKeyPair) { this.nodeOwnerKeyPair = nodeOwnerKeyPair; }
@@ -87,7 +87,7 @@ public class HandlePeerThread implements Runnable{
                         break;
                     case BLOCK: // received a block
                         // stop the mining threads if they exist
-                        stopMiningThreads(threadList);
+                        stopMiningThreads(miningTaskList);
 
                         // handle the block
                         Block block = null;
@@ -97,7 +97,7 @@ public class HandlePeerThread implements Runnable{
                                     blockchain,
                                     unspentTransactionOutputs,
                                     unconfirmedTransactions,
-                                    threadList,
+                                    miningTaskList,
                                     nodeOwnerKeyPair.getPublic(),
                                     vNodes);
                         } catch (ClassNotFoundException e) {
@@ -112,19 +112,12 @@ public class HandlePeerThread implements Runnable{
                             // read the transaction and perform verifications
                             transaction = (Transaction) CNode.getObjectInput().readObject();
 
-                            Objects.requireNonNull(transaction, "received null transaction!");
-
-                            if(TransactionUtil.verifyTransaction(transaction, blockchain, blockchain.size())) {
-                                System.out.println("The transaction is invalid!");
-                                break;
-                            }
-
                             TransactionUtil.handleTransaction(
                                     transaction,
                                     blockchain,
                                     unspentTransactionOutputs,
                                     unconfirmedTransactions,
-                                    threadList,
+                                    miningTaskList,
                                     nodeOwnerKeyPair.getPublic(),
                                     vNodes);
                         } catch (ClassNotFoundException e) {
@@ -141,9 +134,9 @@ public class HandlePeerThread implements Runnable{
         }
     }
 
-    public void stopMiningThreads(List<CreateBlockThread> threadList) {
-        threadList.stream().forEach(thread -> thread.stopMining());
-        threadList.clear();
+    public void stopMiningThreads(List<MiningTask> miningTasks) {
+        miningTasks.stream().forEach(miningTask -> miningTask.getCreateBlockThread().stopMining());
+        miningTasks.clear();
     }
 
     public void addPeers(List<String> peersList) {

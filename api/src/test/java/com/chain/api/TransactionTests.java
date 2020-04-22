@@ -1,7 +1,10 @@
 package com.chain.api;
 
 import com.chain.api.core.Block.Block;
+import com.chain.api.core.Block.BlockUtil;
 import com.chain.api.core.Crypto.CryptoUtil;
+import com.chain.api.core.Net.CNode;
+import com.chain.api.core.Net.MiningTask;
 import com.chain.api.core.Transaction.*;
 import com.chain.api.core.Wallet.WalletUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,8 +20,14 @@ import static org.junit.jupiter.api.Assertions.*;
 public class TransactionTests {
 
     private List<UTXO> utxos;
+    private List<Block> blockchainFirstNode;
+    private List<CNode> vNodesFirstNode;
+    private List<MiningTask> miningTaskListFirstNode;
 
     private List<UTXO> utxosOtherNode;
+    private List<Block> blockchainSecondNode;
+    private List<CNode> vNodesSecondNode;
+    private List<MiningTask> miningTaskListSecondNode;
 
     private PublicKey publicKeySender;
     private PrivateKey privateKeySender;
@@ -40,6 +49,13 @@ public class TransactionTests {
 
         utxos = new ArrayList<>();
         utxosOtherNode = new ArrayList<>();
+
+        this.blockchainFirstNode = new ArrayList<>();
+        this.blockchainSecondNode = new ArrayList<>();
+        this.vNodesFirstNode = new ArrayList<>();
+        this.vNodesSecondNode = new ArrayList<>();
+        this.miningTaskListFirstNode = new ArrayList<>();
+        this.miningTaskListSecondNode = new ArrayList<>();
 
         unconfirmedTransactionsSender = new UnconfirmedTransactions();
         unconfirmedTransactionsReceiver = new UnconfirmedTransactions();
@@ -455,5 +471,62 @@ public class TransactionTests {
         assertEquals(3,userUtxos.size());
         assertEquals(9,value);
 
+    }
+
+    @Test
+    public void handleTransactionTest() {
+
+        MiningTask miningTaskGenesisBlock = BlockUtil.generateGenesisBlock(publicKeySender, blockchainFirstNode, vNodesFirstNode);
+
+        miningTaskListFirstNode.add(miningTaskGenesisBlock);
+
+        try {
+            miningTaskListFirstNode.get(0).getThread().join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // mine 4 blocks
+
+        for(int i = 0; i < 8; i++) {
+            MiningTask miningTask = BlockUtil.generateEmptyBlock(blockchainFirstNode.get(blockchainFirstNode.size() - 1), publicKeySender, utxos,unconfirmedTransactionsSender.getTransactions(),blockchainFirstNode,vNodesFirstNode);
+            try {
+                miningTask.getThread().join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            Transaction trans1 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 50, utxos,unconfirmedTransactionsSender.getTransactions(), blockchainFirstNode.size());
+            TransactionUtil.handleTransaction(trans1, blockchainFirstNode, utxos, unconfirmedTransactionsSender, miningTaskListFirstNode, publicKeySender, vNodesFirstNode);
+
+
+            assertTrue(unconfirmedTransactionsSender.getTransactions().size() == 1);
+
+            for(int j = 0; j < 2; j++) {
+                Transaction trans2 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 50, utxos,unconfirmedTransactionsSender.getTransactions(), blockchainFirstNode.size());
+                TransactionUtil.handleTransaction(trans2, blockchainFirstNode, utxos, unconfirmedTransactionsSender, miningTaskListFirstNode, publicKeySender, vNodesFirstNode);
+            }
+
+            assertTrue(unconfirmedTransactionsSender.getTransactions().size() == 3);
+
+            Transaction trans3 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 50, utxos,unconfirmedTransactionsSender.getTransactions(), blockchainFirstNode.size());
+            TransactionUtil.handleTransaction(trans3, blockchainFirstNode, utxos, unconfirmedTransactionsSender, miningTaskListFirstNode, publicKeySender, vNodesFirstNode);
+
+            miningTaskListFirstNode.get(1).getThread().join();
+            assertEquals(10, blockchainFirstNode.size());
+            assertEquals(5, blockchainFirstNode.get(blockchainFirstNode.size() - 1).getTransactions().size());
+            assertEquals(0, unconfirmedTransactionsSender.getTransactions().size());
+
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
