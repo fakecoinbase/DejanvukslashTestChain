@@ -89,7 +89,7 @@ public class BlockchainTests {
 
     @Test
     public void BlockGenerationTest() {
-        MiningTask miningTaskGenesisBlock = BlockUtil.generateGenesisBlock(publicKeyFirstUser, blockchainFirstNode, vNodesFirstNode);
+        MiningTask miningTaskGenesisBlock = BlockUtil.generateGenesisBlock(publicKeyFirstUser, blockchainFirstNode, null);
 
         miningTaskListFirstNode.add(miningTaskGenesisBlock);
 

@@ -1,10 +1,7 @@
 package com.chain.api;
 
 import com.chain.api.core.Block.Block;
-import com.chain.api.core.Net.CNode;
-import com.chain.api.core.Net.CreateBlockThread;
-import com.chain.api.core.Net.ListenThread;
-import com.chain.api.core.Net.MiningTask;
+import com.chain.api.core.Net.*;
 import com.chain.api.core.Transaction.Transaction;
 import com.chain.api.core.Transaction.UTXO;
 import com.chain.api.core.Transaction.UnconfirmedTransactions;
@@ -54,7 +51,8 @@ public class ApiApplication {
     public static void main(String[] args) {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
-
+        Thread maintenanceThread = new Thread(new MaintenanceThread());
+        maintenanceThread.start();
 
         Thread listenThread = new Thread(new ListenThread(4000));
         listenThread.start();

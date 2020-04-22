@@ -251,7 +251,7 @@ public class BlockUtil {
         for(int i = 1; i < block.getTransactions().size(); i++) {
             Transaction transaction = block.getTransactions().get(i);
 
-            if(TransactionUtil.verifyTransaction(transaction, blockchain, blockHeight)) {
+            if(!TransactionUtil.verifyTransaction(transaction, blockchain, blockHeight)) {
                 System.out.println("Failed tx " + i + " check!");
             }
             else {
