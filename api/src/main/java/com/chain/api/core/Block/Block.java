@@ -1,26 +1,18 @@
 package com.chain.api.core.Block;
 
-import com.chain.api.core.Crypto.CryptoUtil;
 import com.chain.api.core.Transaction.Transaction;
-import com.chain.api.core.Transaction.TransactionUtil;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Getter
 @Setter
 @ToString
 @EqualsAndHashCode
-@Document(collection = "Blocks")
 public class Block {
-    @Id
     private String id;
 
     private Integer index;

@@ -30,13 +30,19 @@ public class TransactionUtil {
      * @param sender the creator of the transaction
      * @param inputs transaction inputs created by the user
      * @param TXID the data used to sign the transaction
-     * @param userUTXOs either get them from local or read the owner's current UTXO's from the db
+     * @param utxos current UTXO's list
      */
-    public static boolean lockTransactionInputs(PrivateKey sender, List<TransactionInput> inputs, String TXID, List<UTXO> userUTXOs) {
+    public static boolean lockTransactionInputs(PrivateKey sender, List<TransactionInput> inputs, String TXID, List<UTXO> utxos) {
+
+        Objects.requireNonNull(sender, "Private Key is null!");
+        Objects.requireNonNull(inputs, "TXI list is null!");
+        Objects.requireNonNull(utxos, "UTXO list is null!");
+
+
         for(int i = 0; i < inputs.size(); i++) {
             TransactionInput txi = inputs.get(i);
             // find the UTXO it references
-            UTXO tempUtxo = userUTXOs.stream().filter(utxo -> utxo.getPreviousTx().equals(txi.getPreviousTx()) && utxo.getIndex() == txi.getIndex()).findAny().orElse(null);
+            UTXO tempUtxo = utxos.stream().filter(utxo -> utxo.getPreviousTx().equals(txi.getPreviousTx()) && utxo.getIndex() == txi.getIndex()).findAny().orElse(null);
             if(tempUtxo == null) {
                 System.out.println("Input doesn't match output!");
                 return false;
@@ -66,6 +72,10 @@ public class TransactionUtil {
      * @return true if the transaction was verified succesfully
      */
     public static boolean verifyTransactionInputs(PublicKey owner,List<TransactionInput> inputs, String TXID) {
+
+        Objects.requireNonNull(owner, "Public Key is null!");
+        Objects.requireNonNull(inputs, "TXI list is null!");
+
         for(int i = 0; i < inputs.size(); i++) {
             TransactionInput txi = inputs.get(i);
             if(!CryptoUtil.verifyECDSASig(owner, TXID, CryptoUtil.hexStringToByteArray(txi.getSignature()))) {
@@ -81,6 +91,10 @@ public class TransactionUtil {
      * Generate's the transaction id TXID which is the SHA256 encrypted value of the inputs,outputs,sender,receiver,value and a random nonce to avoid identical hashes
      */
     public static String generateTransactionId(List<TransactionInput> inputs, List<TransactionOutput> outputs, String sender, String receiver, float value, Integer blockHeight) {
+
+        Objects.requireNonNull(inputs, "TXI list is null!");
+        Objects.requireNonNull(outputs, "TXO list is null!");
+
         String txIn = inputs.stream().map( TXI -> TXI.getPreviousTx() + TXI.getIndex()).reduce("", (subtotal, element) -> subtotal + element);
         String txOut = outputs.stream().map( TXO -> TXO.getTo() + Float.toString(TXO.getValue())).reduce("", (subtotal, element) -> subtotal + element);
         String TXID = CryptoUtil.encryptSha256(
@@ -102,6 +116,11 @@ public class TransactionUtil {
      * @return the new list of unspent transaction outputs
      */
     public static void updateUtxos(List<Transaction> transactions, List<UTXO> currentUTXOs) {
+
+        Objects.requireNonNull(transactions, "Transactions list is null!");
+
+        Objects.requireNonNull(currentUTXOs, "UTXO list is null!");
+
         /*
         transactions.stream().forEach(transaction -> {
             updateUtxos(transaction,currentUTXOs,unconfirmedTransactions);
@@ -163,14 +182,8 @@ public class TransactionUtil {
         currentUTXOs.addAll(blocksTXOs);
     }
 
-    /**
-     *
-     * update's the internal list and database of UTXO's
-     * used whenever a new transaction is received from a peer or a transaction is made
-     * @param transaction
-     * @param currentUTXOs the UTXO's of the blockchain prior to the new received block
-     * @return the new list of unspent transaction outputs
-     */
+
+    /*
     public static void updateUtxos(Transaction transaction, List<UTXO> currentUTXOs, UnconfirmedTransactions unconfirmedTransactions) {
         // Retrieve all the TXO's from the received transaction as UTXO
         List<UTXO> blocksTXOs = new ArrayList<>();
@@ -216,7 +229,7 @@ public class TransactionUtil {
                 }
             }
         }
-        */
+
 
         // 4. add the new UTXO's blocksTXO's to the currentUTXOs
         currentUTXOs.addAll(blocksTXOs);
@@ -225,6 +238,8 @@ public class TransactionUtil {
 
         unconfirmedTransactions.addUnconfirmedTransactions(transaction);
     }
+    */
+
 
     /**
      * find the specific TXO refferenced by the TI in the blockchain
@@ -233,6 +248,10 @@ public class TransactionUtil {
      * @return TXO or null
      */
     public static TransactionOutput findTransactionOutput(TransactionInput TI, List<Block> blockchain) {
+
+        Objects.requireNonNull(TI, "Transaction input is null!");
+        Objects.requireNonNull(blockchain, "The list of block's is null!");
+
         // Find the transaction the TXI refers to
         Transaction transaction = findTransaction(TI.getPreviousTx(), blockchain);
         if(transaction == null) {
@@ -255,6 +274,9 @@ public class TransactionUtil {
      * @return Transaction or null
      */
     public static Transaction findTransaction(String TXID, List<Block> blockchain) {
+
+        Objects.requireNonNull(blockchain, "The list of block's is null!");
+
         for(int i = 0; i < blockchain.size(); i++) {
             Block block = blockchain.get(i);
             Transaction trans = block.getTransactions().stream().filter(transaction -> transaction.getTXID().equals(TXID)).findAny().orElse(null);
@@ -264,6 +286,10 @@ public class TransactionUtil {
     }
 
     public static boolean verifyTransaction(Transaction transaction,List<Block> blockchain, Integer blockHeight) {
+
+        Objects.requireNonNull(transaction, "Transaction is null!");
+        Objects.requireNonNull(blockchain, "The list of block's is null!");
+
         // Check if the transaction was modified
         if(!transaction.getTXID().equals(
                 generateTransactionId(transaction.getInputs(),
@@ -294,12 +320,15 @@ public class TransactionUtil {
 
         // other validations
 
-        // Note: verifying that none of the transaction's inputs have been previously spent is not neccesary
+        // Note: verifying that none of the transaction's inputs have been previously spent is not necessary
 
         return true;
     }
 
     public static boolean verifyCoinbaseTransaction(Transaction coinbase,Integer blockHeight) {
+
+        Objects.requireNonNull(coinbase, "Coinbase transaction is null!");
+
         // Check if the coinbase transaction was modified
         if(!coinbase.getTXID().equals(
                 generateTransactionId(
@@ -342,6 +371,10 @@ public class TransactionUtil {
      * @return user's UTXO's
      */
     public static List<UTXO> getUserUtxos(PublicKey owner,List<UTXO> utxos) {
+
+        Objects.requireNonNull(owner, "Public Key is null!");
+        Objects.requireNonNull(utxos, "UTXO list is null!");
+
         return utxos.stream().filter(utxo -> CryptoUtil.getStringFromKey(utxo.getOwner()).equals(CryptoUtil.getStringFromKey(owner))).collect(Collectors.toList());
     }
 
@@ -351,6 +384,8 @@ public class TransactionUtil {
      * @return
      */
     public static float getUsersBalance(List<UTXO> utxos) {
+        Objects.requireNonNull(utxos, "UTXO list is null!");
+
         float value = utxos.stream().map(utxo -> utxo.getValue()).reduce(0f, (a,b) -> a+b);
         return value;
     }
@@ -412,16 +447,6 @@ public class TransactionUtil {
     }
 
     /**
-     * removes the UTXO's used as input and adds the new TXO created as UTXO's
-     * used after the block was mined
-     * @param transaction
-     * @param utxos
-     */
-    public static void confirmTransaction(Transaction transaction , List<UTXO> utxos) {
-
-    }
-
-    /**
      *
      * @param from private key of sender
      * @param to public key of receiver
@@ -432,6 +457,10 @@ public class TransactionUtil {
      */
     public static Transaction createTransaction(String from, String to, float value, List<UTXO> utxos,List<Transaction> unconfirmedTransactions, Integer blockHeight)
             throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
+
+        Objects.requireNonNull(utxos, "UTXO list is null!");
+        Objects.requireNonNull(unconfirmedTransactions, "Unconfirmed transactions list is null!");
+
         Transaction transaction = null;
         PublicKey fromKey = CryptoUtil.DerivePubKeyFromPrivKey((BCECPrivateKey) CryptoUtil.getPrivateKeyFromString(from));
         PublicKey toKey = CryptoUtil.getPublicKeyFromString(to);
@@ -511,6 +540,10 @@ public class TransactionUtil {
      * @param unconfirmedTransactions
      */
     public static void updateUnconfirmedTransactions(List<UTXO> utxos, List<Transaction> unconfirmedTransactions) {
+
+        Objects.requireNonNull(utxos, "UTXO list is null!");
+        Objects.requireNonNull(unconfirmedTransactions, "Unconfirmed transactions list is null!");
+
         for(int i = 0; i < unconfirmedTransactions.size(); i++) {
             Transaction currentTx = unconfirmedTransactions.get(i);
             List<TransactionInput> unconfirmedTxInputs = currentTx.getInputs();
@@ -545,7 +578,13 @@ public class TransactionUtil {
      */
     public static void handleTransaction(Transaction transaction, List<Block> blockchain, List<UTXO> unspentTransactionOutputs, UnconfirmedTransactions unconfirmedTransactions, List<MiningTask> miningTaskList, PublicKey publicKey, List<CNode> vNodes) {
 
-        Objects.requireNonNull(transaction, "received null transaction!");
+        Objects.requireNonNull(transaction, "Transaction is null!");
+        Objects.requireNonNull(blockchain, "The list of block's is null!");
+        Objects.requireNonNull(unspentTransactionOutputs, "UTXO list is null!");
+        Objects.requireNonNull(unconfirmedTransactions, "Unconfirmed transaction is null!");
+        Objects.requireNonNull(miningTaskList, "The list of mining tasks is null!");
+        Objects.requireNonNull(publicKey, "Public Key is null!");
+        Objects.requireNonNull(vNodes, "The list of Peers is null!");
 
         if(!verifyTransaction(transaction, blockchain, blockchain.size())) {
             System.out.println("The transaction is invalid!");

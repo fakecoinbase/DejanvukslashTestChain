@@ -14,6 +14,10 @@ import java.util.concurrent.TimeUnit;
 public class BlockUtil {
 
     public static boolean isBlockValid(Block block, List<Block> blockchain, int difficulty, int blockHeight) {
+
+        Objects.requireNonNull(block, "Block is null!");
+        Objects.requireNonNull(block, "Blockchain list is null!");
+
         // Reject if duplicate of block we have in any of the three categories
         for(int i = 0 ; i < blockchain.size(); i++) {
             Block currBlock = blockchain.get(i);
@@ -84,7 +88,9 @@ public class BlockUtil {
         return true;
     }
 
+    /*
     public static boolean validateBlockchain(List<Block> blockchain) {
+
         if(blockchain.isEmpty()) {
             System.out.print("Blockchain can't be empty!");
             return false;
@@ -94,8 +100,13 @@ public class BlockUtil {
 
         return true;
     }
+    */
+
 
     public static boolean isChainValid(List<Block> blockchain) {
+
+        Objects.requireNonNull(blockchain, "List of blocks is null!");
+
         Block currBlock;
         Block prevBlock;
         for(int i = 1; i < blockchain.size(); i++) {
@@ -130,6 +141,10 @@ public class BlockUtil {
      * @return true if first chain has more cumulative difficulty
      */
     public static boolean compareChains(List<Block> origBlockchain, List<Block> newBlockchain) {
+
+        Objects.requireNonNull(origBlockchain, "Original list of blocks is null!");
+        Objects.requireNonNull(newBlockchain, "New list of blocks is null!");
+
         int origSize = 0;
         int newSize = 0;
         for(int i = 0; i < origBlockchain.size();i++) {
@@ -141,18 +156,10 @@ public class BlockUtil {
         return (origSize > newSize);
     }
 
-    private static boolean checkGenesisBlock(Block firstBlock) {
-		/*
-		Block genesis = new Block(null); // read the default values from a prop file or system variable
-		if(genesis != firstBlock) {
-			return false;
-		}
-		return true;
-		*/
-        return true;
-    }
-
     public static boolean isBlockMined(Block block, int difficulty) {
+
+        Objects.requireNonNull(block, "Block is null!");
+
         String hashTarget = new String(new char[difficulty]).replace('\0', '0');
         if(!block.getHash().substring( 0, difficulty).equals(hashTarget)) {
             System.out.println("Block hash must satisfy claimed nBits proof of work!");
@@ -162,6 +169,7 @@ public class BlockUtil {
     }
 
     public static String generateMerkleRoot(List<Transaction> transactions) {
+
         if(transactions == null || transactions.size() == 0) {
             //System.out.println("Invalid transactions list");
             return "";
@@ -185,6 +193,9 @@ public class BlockUtil {
     }
 
     public static void generateHash(Block block) {
+
+        Objects.requireNonNull(block, "Block is null!");
+
         block.setHash(CryptoUtil.encryptSha256(block.getPreviousHash()
                 + block.getIndex()
                 + block.getTimestamp()
@@ -193,6 +204,13 @@ public class BlockUtil {
     }
 
     public static  MiningTask generateEmptyBlock(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, List<Transaction> unconfirmedTransactions, List<Block> blockchain, List<CNode> vNodes) {
+
+        Objects.requireNonNull(nodeOwner, "Public Key is null!");
+        Objects.requireNonNull(utxos, "UTXO list is null!");
+        Objects.requireNonNull(unconfirmedTransactions, "Unconfirmed transaction is null!");
+        Objects.requireNonNull(blockchain, "The list of block's is null!");
+        Objects.requireNonNull(vNodes, "The list of Peers is null!");
+
         MiningTask miningTask = generateBlockWithTransaction(
                 prevBlock,
                 nodeOwner,
@@ -207,6 +225,10 @@ public class BlockUtil {
     }
 
     public static MiningTask generateBlockWithTransaction(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight, List<Transaction> transactions, List<Transaction> unconfirmedTransactions, List<Block> blockchain, List<CNode> vNodes) {
+
+        Objects.requireNonNull(nodeOwner, "Public Key is null!");
+        Objects.requireNonNull(blockchain, "The list of block's is null!");
+
         CreateBlockThread createBlockThread = new CreateBlockThread(prevBlock, nodeOwner, utxos, blockHeight, transactions, unconfirmedTransactions, blockchain, vNodes);
         Thread mineBlockThread = new Thread(createBlockThread);
         mineBlockThread.start();
@@ -217,6 +239,10 @@ public class BlockUtil {
 
     // Genesis block will be hardcoded
     public static MiningTask generateGenesisBlock(PublicKey nodeOwner, List<Block> blockchain, List<CNode> vNodes) {
+
+        Objects.requireNonNull(nodeOwner, "Public Key is null!");
+        Objects.requireNonNull(blockchain, "The list of block's is null!");
+
         MiningTask miningTask = generateBlockWithTransaction(
                 null,
                 nodeOwner,
@@ -234,6 +260,12 @@ public class BlockUtil {
     public static void handleBlock(Block block, List<Block> blockchain, List<UTXO> unspentTransactionOutputs, UnconfirmedTransactions unconfirmedTransactions, List<MiningTask> miningTaskList, PublicKey publicKey, List<CNode> vNodes) {
 
         Objects.requireNonNull(block, "received null block!");
+        Objects.requireNonNull(blockchain, "The list of block's is null!");
+        Objects.requireNonNull(unspentTransactionOutputs, "UTXO list is null!");
+        Objects.requireNonNull(unconfirmedTransactions, "Unconfirmed transaction is null!");
+        Objects.requireNonNull(miningTaskList, "The list of mining tasks is null!");
+        Objects.requireNonNull(publicKey, "Public Key is null!");
+        Objects.requireNonNull(vNodes, "The list of Peers is null!");
 
         // 1. validate the received block
         int blockHeight = blockchain.size();
@@ -293,7 +325,10 @@ public class BlockUtil {
         }
     }
 
+    /*
     public void handleBlockchain(List<Block> receivedBlochain) {
         Objects.requireNonNull(receivedBlochain, "received null blockchain!");
     }
+    */
+
 }

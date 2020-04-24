@@ -80,6 +80,8 @@ public class BlockchainTests {
 
         System.out.println("public key sender:      " + CryptoUtil.getStringFromKey(publicKeyFirstUser));
 
+        System.out.println("private key sender:      " + CryptoUtil.getStringFromKey(privateKeyFirstUser));
+
         System.out.println("public key receiver     " + CryptoUtil.getStringFromKey(publicKeySecondUser));
 
         System.out.println("public key third user   " + CryptoUtil.getStringFromKey(publicKeyThirdUser));
@@ -95,6 +97,8 @@ public class BlockchainTests {
 
         try {
             miningTaskListFirstNode.get(0).getThread().join();
+
+            System.out.println(blockchainFirstNode.get(0));
 
             assertTrue(blockchainFirstNode.size() == 1);
 

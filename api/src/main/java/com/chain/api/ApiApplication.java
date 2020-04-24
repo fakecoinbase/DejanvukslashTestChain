@@ -1,22 +1,23 @@
 package com.chain.api;
 
 import com.chain.api.core.Block.Block;
+import com.chain.api.core.Crypto.CryptoUtil;
 import com.chain.api.core.Net.*;
 import com.chain.api.core.Transaction.Transaction;
 import com.chain.api.core.Transaction.UTXO;
 import com.chain.api.core.Transaction.UnconfirmedTransactions;
 import com.chain.api.core.Wallet.WalletUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
+import org.springframework.core.env.Environment;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Security;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,10 +40,6 @@ public class ApiApplication {
     @Bean
     @Scope("singleton")
     public List<CNode> vNodes() {return new ArrayList<>(); }
-
-    @Bean
-    @Scope("singleton")
-    public KeyPair nodeOwnerKeyPair() {return WalletUtil.generateKeyPair();}
 
     @Bean
     @Scope("singleton")

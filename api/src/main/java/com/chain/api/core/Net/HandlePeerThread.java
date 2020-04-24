@@ -2,13 +2,18 @@ package com.chain.api.core.Net;
 
 import com.chain.api.core.Block.Block;
 import com.chain.api.core.Block.BlockUtil;
+import com.chain.api.core.Crypto.CryptoUtil;
 import com.chain.api.core.Transaction.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -20,9 +25,10 @@ public class HandlePeerThread implements Runnable{
 
     private List<Block> blockchain;
 
-    private UnconfirmedTransactions unconfirmedTransactions;
+    @Value("${app.PUBLIC_KEY}")
+    private String publicKey;
 
-    private KeyPair nodeOwnerKeyPair;
+    private UnconfirmedTransactions unconfirmedTransactions;
 
     private List<UTXO> unspentTransactionOutputs;
 
@@ -30,9 +36,6 @@ public class HandlePeerThread implements Runnable{
 
     @Autowired
     public void setMiningTaskList(List<MiningTask> miningTaskList) {this.miningTaskList = miningTaskList;}
-
-    @Autowired
-    public void setNodeOwnerKeyPair(KeyPair nodeOwnerKeyPair) { this.nodeOwnerKeyPair = nodeOwnerKeyPair; }
 
     @Autowired
     public void setUnspentTransactionOutputs(List<UTXO> unspentTransactionOutputs) {
@@ -98,12 +101,18 @@ public class HandlePeerThread implements Runnable{
                                     unspentTransactionOutputs,
                                     unconfirmedTransactions,
                                     miningTaskList,
-                                    nodeOwnerKeyPair.getPublic(),
+                                    CryptoUtil.getPublicKeyFromString(publicKey),
                                     vNodes);
                         } catch (ClassNotFoundException e) {
                             e.printStackTrace();
                         } catch (NullPointerException e) {
                             System.out.println(e.getMessage());
+                        } catch (NoSuchAlgorithmException e) {
+                            e.printStackTrace();
+                        } catch (NoSuchProviderException e) {
+                            e.printStackTrace();
+                        } catch (InvalidKeySpecException e) {
+                            e.printStackTrace();
                         }
                         break;
                     case TRANS: // received a transaction
@@ -118,13 +127,19 @@ public class HandlePeerThread implements Runnable{
                                     unspentTransactionOutputs,
                                     unconfirmedTransactions,
                                     miningTaskList,
-                                    nodeOwnerKeyPair.getPublic(),
+                                    CryptoUtil.getPublicKeyFromString(publicKey),
                                     vNodes);
                         } catch (ClassNotFoundException e) {
                             e.printStackTrace();
                             break;
                         } catch (NullPointerException e) {
                             System.out.println(e.getMessage());
+                        } catch (NoSuchAlgorithmException e) {
+                            e.printStackTrace();
+                        } catch (NoSuchProviderException e) {
+                            e.printStackTrace();
+                        } catch (InvalidKeySpecException e) {
+                            e.printStackTrace();
                         }
                         break;
                 }

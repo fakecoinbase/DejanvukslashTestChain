@@ -24,7 +24,7 @@ public class MaintenanceThread implements Runnable {
 
     @Override
     public void run() {
-        while(true) {
+        while(vNodes != null && miningTaskList != null) {
             // check for dead peers
             for(int i = 0; i < vNodes.size(); i++) {
                 if(vNodes.get(i).getSocket().isClosed()) {
