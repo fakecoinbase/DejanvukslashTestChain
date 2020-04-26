@@ -17,6 +17,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class HandlePeerThread implements Runnable{
     private CNode CNode;
@@ -33,6 +34,13 @@ public class HandlePeerThread implements Runnable{
     private List<UTXO> unspentTransactionOutputs;
 
     private List<MiningTask> miningTaskList;
+
+    private AtomicInteger difficultyTarget;;
+
+    @Autowired
+    public void setDifficultyTarget(AtomicInteger difficultyTarget) {
+        this.difficultyTarget = difficultyTarget;
+    }
 
     @Autowired
     public void setMiningTaskList(List<MiningTask> miningTaskList) {this.miningTaskList = miningTaskList;}
@@ -102,7 +110,8 @@ public class HandlePeerThread implements Runnable{
                                     unconfirmedTransactions,
                                     miningTaskList,
                                     CryptoUtil.getPublicKeyFromString(publicKey),
-                                    vNodes);
+                                    vNodes,
+                                    difficultyTarget);
                         } catch (ClassNotFoundException e) {
                             e.printStackTrace();
                         } catch (NullPointerException e) {
@@ -128,7 +137,8 @@ public class HandlePeerThread implements Runnable{
                                     unconfirmedTransactions,
                                     miningTaskList,
                                     CryptoUtil.getPublicKeyFromString(publicKey),
-                                    vNodes);
+                                    vNodes,
+                                    difficultyTarget);
                         } catch (ClassNotFoundException e) {
                             e.printStackTrace();
                             break;

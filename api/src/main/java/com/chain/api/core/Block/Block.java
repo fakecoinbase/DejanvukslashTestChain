@@ -33,7 +33,6 @@ public class Block {
             this.index = 0;
         }
         this.transactions = transactions;
-        this.difficultyTarget = 3; // read difficulty from a central config server
         this.nonce = 0;
     }
 

@@ -10,6 +10,7 @@ import com.chain.api.core.Transaction.*;
 import java.security.PublicKey;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class BlockUtil {
 
@@ -203,7 +204,14 @@ public class BlockUtil {
                 + block.getNonce()));
     }
 
-    public static  MiningTask generateEmptyBlock(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, List<Transaction> unconfirmedTransactions, List<Block> blockchain, List<CNode> vNodes) {
+    public static  MiningTask generateEmptyBlock(
+            Block prevBlock,
+            PublicKey nodeOwner,
+            List<UTXO> utxos,
+            List<Transaction> unconfirmedTransactions,
+            List<Block> blockchain,
+            List<CNode> vNodes,
+            AtomicInteger difficultyTarget) {
 
         Objects.requireNonNull(nodeOwner, "Public Key is null!");
         Objects.requireNonNull(utxos, "UTXO list is null!");
@@ -219,17 +227,29 @@ public class BlockUtil {
                 null,
                 unconfirmedTransactions,
                 blockchain,
-                vNodes);
+                vNodes,
+                difficultyTarget);
 
         return miningTask;
     }
 
-    public static MiningTask generateBlockWithTransaction(Block prevBlock,PublicKey nodeOwner, List<UTXO> utxos, int blockHeight, List<Transaction> transactions, List<Transaction> unconfirmedTransactions, List<Block> blockchain, List<CNode> vNodes) {
+    public static MiningTask generateBlockWithTransaction(
+            Block prevBlock,
+            PublicKey nodeOwner,
+            List<UTXO> utxos,
+            int blockHeight,
+            List<Transaction> transactions,
+            List<Transaction> unconfirmedTransactions,
+            List<Block> blockchain,
+            List<CNode> vNodes,
+            AtomicInteger difficultyTarget) {
 
         Objects.requireNonNull(nodeOwner, "Public Key is null!");
         Objects.requireNonNull(blockchain, "The list of block's is null!");
 
-        CreateBlockThread createBlockThread = new CreateBlockThread(prevBlock, nodeOwner, utxos, blockHeight, transactions, unconfirmedTransactions, blockchain, vNodes);
+
+
+        CreateBlockThread createBlockThread = new CreateBlockThread(prevBlock, nodeOwner, utxos, blockHeight, transactions, unconfirmedTransactions, blockchain, vNodes, difficultyTarget);
         Thread mineBlockThread = new Thread(createBlockThread);
         mineBlockThread.start();
 
@@ -238,7 +258,7 @@ public class BlockUtil {
     }
 
     // Genesis block will be hardcoded
-    public static MiningTask generateGenesisBlock(PublicKey nodeOwner, List<Block> blockchain, List<CNode> vNodes) {
+    public static MiningTask generateGenesisBlock(PublicKey nodeOwner, List<Block> blockchain, List<CNode> vNodes, AtomicInteger difficultyTarget) {
 
         Objects.requireNonNull(nodeOwner, "Public Key is null!");
         Objects.requireNonNull(blockchain, "The list of block's is null!");
@@ -251,13 +271,22 @@ public class BlockUtil {
                 null,
                 null,
                 blockchain,
-                vNodes);
+                vNodes,
+                difficultyTarget);
 
         return miningTask;
     }
 
 
-    public static void handleBlock(Block block, List<Block> blockchain, List<UTXO> unspentTransactionOutputs, UnconfirmedTransactions unconfirmedTransactions, List<MiningTask> miningTaskList, PublicKey publicKey, List<CNode> vNodes) {
+    public static void handleBlock(
+            Block block,
+            List<Block> blockchain,
+            List<UTXO> unspentTransactionOutputs,
+            UnconfirmedTransactions unconfirmedTransactions,
+            List<MiningTask> miningTaskList,
+            PublicKey publicKey,
+            List<CNode> vNodes,
+            AtomicInteger difficultyTarget) {
 
         Objects.requireNonNull(block, "received null block!");
         Objects.requireNonNull(blockchain, "The list of block's is null!");
@@ -309,7 +338,8 @@ public class BlockUtil {
                     unconfirmedTransactions,
                     miningTaskList,
                     publicKey,
-                    vNodes));
+                    vNodes,
+                    difficultyTarget));
         }
         else {
             // add the validated block to the tree

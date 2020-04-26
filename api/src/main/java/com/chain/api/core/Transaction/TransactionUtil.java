@@ -16,6 +16,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -576,7 +577,15 @@ public class TransactionUtil {
      * @param publicKey
      * @param vNodes
      */
-    public static void handleTransaction(Transaction transaction, List<Block> blockchain, List<UTXO> unspentTransactionOutputs, UnconfirmedTransactions unconfirmedTransactions, List<MiningTask> miningTaskList, PublicKey publicKey, List<CNode> vNodes) {
+    public static void handleTransaction(
+            Transaction transaction,
+            List<Block> blockchain,
+            List<UTXO> unspentTransactionOutputs,
+            UnconfirmedTransactions unconfirmedTransactions,
+            List<MiningTask> miningTaskList,
+            PublicKey publicKey,
+            List<CNode> vNodes,
+            AtomicInteger difficultyTarget) {
 
         Objects.requireNonNull(transaction, "Transaction is null!");
         Objects.requireNonNull(blockchain, "The list of block's is null!");
@@ -604,7 +613,8 @@ public class TransactionUtil {
                     unconfirmedTransactions.copyUnconfirmedTransactions(),
                     unconfirmedTransactions.getTransactions(),
                     blockchain,
-                    vNodes
+                    vNodes,
+                    difficultyTarget
             );
             miningTaskList.add(miningTask);
         }

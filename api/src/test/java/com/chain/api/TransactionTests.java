@@ -14,6 +14,7 @@ import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,11 +42,16 @@ public class TransactionTests {
     private UnconfirmedTransactions unconfirmedTransactionsSender;
     private UnconfirmedTransactions unconfirmedTransactionsReceiver;
 
+    private AtomicInteger difficultyTarget;
+
+
     @BeforeEach
     public void setup() {
         System.out.println("=============== Start of Test Setup ===============\n");
 
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+
+        difficultyTarget = new AtomicInteger(3);
 
         utxos = new ArrayList<>();
         utxosOtherNode = new ArrayList<>();
@@ -476,7 +482,7 @@ public class TransactionTests {
     @Test
     public void handleTransactionTest() {
 
-        MiningTask miningTaskGenesisBlock = BlockUtil.generateGenesisBlock(publicKeySender, blockchainFirstNode, vNodesFirstNode);
+        MiningTask miningTaskGenesisBlock = BlockUtil.generateGenesisBlock(publicKeySender, blockchainFirstNode, vNodesFirstNode, difficultyTarget);
 
         miningTaskListFirstNode.add(miningTaskGenesisBlock);
 
@@ -489,7 +495,7 @@ public class TransactionTests {
         // mine 4 blocks
 
         for(int i = 0; i < 8; i++) {
-            MiningTask miningTask = BlockUtil.generateEmptyBlock(blockchainFirstNode.get(blockchainFirstNode.size() - 1), publicKeySender, utxos,unconfirmedTransactionsSender.getTransactions(),blockchainFirstNode,vNodesFirstNode);
+            MiningTask miningTask = BlockUtil.generateEmptyBlock(blockchainFirstNode.get(blockchainFirstNode.size() - 1), publicKeySender, utxos,unconfirmedTransactionsSender.getTransactions(),blockchainFirstNode,vNodesFirstNode, difficultyTarget);
             try {
                 miningTask.getThread().join();
             } catch (InterruptedException e) {
@@ -499,20 +505,20 @@ public class TransactionTests {
 
         try {
             Transaction trans1 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 50, utxos,unconfirmedTransactionsSender.getTransactions(), blockchainFirstNode.size());
-            TransactionUtil.handleTransaction(trans1, blockchainFirstNode, utxos, unconfirmedTransactionsSender, miningTaskListFirstNode, publicKeySender, vNodesFirstNode);
+            TransactionUtil.handleTransaction(trans1, blockchainFirstNode, utxos, unconfirmedTransactionsSender, miningTaskListFirstNode, publicKeySender, vNodesFirstNode, difficultyTarget);
 
 
             assertTrue(unconfirmedTransactionsSender.getTransactions().size() == 1);
 
             for(int j = 0; j < 2; j++) {
                 Transaction trans2 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 50, utxos,unconfirmedTransactionsSender.getTransactions(), blockchainFirstNode.size());
-                TransactionUtil.handleTransaction(trans2, blockchainFirstNode, utxos, unconfirmedTransactionsSender, miningTaskListFirstNode, publicKeySender, vNodesFirstNode);
+                TransactionUtil.handleTransaction(trans2, blockchainFirstNode, utxos, unconfirmedTransactionsSender, miningTaskListFirstNode, publicKeySender, vNodesFirstNode, difficultyTarget);
             }
 
             assertTrue(unconfirmedTransactionsSender.getTransactions().size() == 3);
 
             Transaction trans3 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 50, utxos,unconfirmedTransactionsSender.getTransactions(), blockchainFirstNode.size());
-            TransactionUtil.handleTransaction(trans3, blockchainFirstNode, utxos, unconfirmedTransactionsSender, miningTaskListFirstNode, publicKeySender, vNodesFirstNode);
+            TransactionUtil.handleTransaction(trans3, blockchainFirstNode, utxos, unconfirmedTransactionsSender, miningTaskListFirstNode, publicKeySender, vNodesFirstNode, difficultyTarget);
 
             miningTaskListFirstNode.get(1).getThread().join();
             assertEquals(10, blockchainFirstNode.size());

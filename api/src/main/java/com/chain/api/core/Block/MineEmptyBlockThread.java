@@ -14,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MineEmptyBlockThread implements Runnable  {
 
@@ -29,6 +30,13 @@ public class MineEmptyBlockThread implements Runnable  {
     private UnconfirmedTransactions unconfirmedTransactions;
 
     private List<CNode> vNodes;
+
+    private AtomicInteger difficultyTarget;
+
+    @Autowired
+    public void setDifficultyTarget(AtomicInteger difficultyTarget) {
+        this.difficultyTarget = difficultyTarget;
+    }
 
     @Autowired
     public MineEmptyBlockThread(List<Block> blockchain) {
@@ -50,19 +58,29 @@ public class MineEmptyBlockThread implements Runnable  {
 
     @Override
     public void run() {
-        MiningTask miningTaskEmptyBlock = null;
+        MiningTask miningTaskEmptyBlock = mineEmptyBlock();
 
-        mineEmptyBlock(miningTaskEmptyBlock);
+        if(miningTaskEmptyBlock == null) {
+            System.console().printf("Failed to mine! \n");
+            return;
+        }
 
         while (true) {
-            if(readUserInput()) {
-                mineEmptyBlock(miningTaskEmptyBlock);
-            }
-            else {
-                System.console().printf("Mining stoped! \n");
-                // stop the mining of the block
-                miningTaskEmptyBlock.getCreateBlockThread().stopMining();
-                break;
+            if(!miningTaskEmptyBlock.getThread().isAlive()) {
+                if(readUserInput()) {
+                    miningTaskEmptyBlock = mineEmptyBlock();
+
+                    if(miningTaskEmptyBlock == null) {
+                        System.console().printf("Failed to mine! \n");
+                        break;
+                    }
+                }
+                else {
+                    System.console().printf("Mining stoped! \n");
+                    // stop the mining of the block
+                    miningTaskEmptyBlock.getCreateBlockThread().stopMining();
+                    break;
+                }
             }
 
             try {
@@ -73,15 +91,16 @@ public class MineEmptyBlockThread implements Runnable  {
         }
     }
 
-    public void mineEmptyBlock(MiningTask miningTaskEmptyBlock) {
+    public MiningTask mineEmptyBlock() {
         try {
-            miningTaskEmptyBlock = BlockUtil.generateEmptyBlock(
+            return BlockUtil.generateEmptyBlock(
                     blockchain.get(blockchain.size() - 1),
                     CryptoUtil.getPublicKeyFromString(publicKey),
                     unspentTransactionOutputs,
                     unconfirmedTransactions.getTransactions(),
                     blockchain,
-                    vNodes);
+                    vNodes,
+                    difficultyTarget);
         } catch (NoSuchProviderException e) {
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
@@ -89,6 +108,8 @@ public class MineEmptyBlockThread implements Runnable  {
         } catch (InvalidKeySpecException e) {
             e.printStackTrace();
         }
+
+        return null;
     }
 
     public boolean readUserInput() {

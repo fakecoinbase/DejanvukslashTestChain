@@ -18,6 +18,7 @@ import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -46,13 +47,15 @@ public class BlockchainTests {
     private PublicKey publicKeyThirdUser;
     private PrivateKey privateKeyThirdUser;
 
-
+    private AtomicInteger difficultyTarget;
 
     @BeforeEach
     public void setup() {
         System.out.println("=============== Start of Blockchain Tests Setup ===============\n");
 
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+
+        difficultyTarget = new AtomicInteger(1);
 
         this.blockchainFirstNode = new ArrayList<>();
         this.utxosFirstNode = new ArrayList<>();
@@ -91,7 +94,7 @@ public class BlockchainTests {
 
     @Test
     public void BlockGenerationTest() {
-        MiningTask miningTaskGenesisBlock = BlockUtil.generateGenesisBlock(publicKeyFirstUser, blockchainFirstNode, null);
+        MiningTask miningTaskGenesisBlock = BlockUtil.generateGenesisBlock(publicKeyFirstUser, blockchainFirstNode, null, difficultyTarget);
 
         miningTaskListFirstNode.add(miningTaskGenesisBlock);
 
@@ -108,7 +111,7 @@ public class BlockchainTests {
             e.printStackTrace();
         }
 
-        MiningTask miningTaskEmptyBlock = BlockUtil.generateEmptyBlock(blockchainFirstNode.get(blockchainFirstNode.size() - 1), publicKeyFirstUser, utxosFirstNode,unconfirmedTransactionsFirstNode.getTransactions(),blockchainFirstNode,vNodesFirstNode);
+        MiningTask miningTaskEmptyBlock = BlockUtil.generateEmptyBlock(blockchainFirstNode.get(blockchainFirstNode.size() - 1), publicKeyFirstUser, utxosFirstNode,unconfirmedTransactionsFirstNode.getTransactions(),blockchainFirstNode,vNodesFirstNode, difficultyTarget);
         miningTaskListFirstNode.add(miningTaskEmptyBlock);
 
         try {
@@ -133,7 +136,7 @@ public class BlockchainTests {
         // mine 8 empty blocks
 
         for(int i = 0; i < 8; i++) {
-            MiningTask miningTask = BlockUtil.generateEmptyBlock(blockchainFirstNode.get(blockchainFirstNode.size() - 1), publicKeyFirstUser, utxosFirstNode,unconfirmedTransactionsFirstNode.getTransactions(),blockchainFirstNode,vNodesFirstNode);
+            MiningTask miningTask = BlockUtil.generateEmptyBlock(blockchainFirstNode.get(blockchainFirstNode.size() - 1), publicKeyFirstUser, utxosFirstNode,unconfirmedTransactionsFirstNode.getTransactions(),blockchainFirstNode,vNodesFirstNode, difficultyTarget);
             try {
                 miningTask.getThread().join();
             } catch (InterruptedException e) {
@@ -172,7 +175,8 @@ public class BlockchainTests {
                 unconfirmedTransactionsFirstNode.copyUnconfirmedTransactions(),
                 unconfirmedTransactionsFirstNode.getTransactions(),
                 blockchainFirstNode,
-                vNodesFirstNode
+                vNodesFirstNode,
+                difficultyTarget
         );
 
         miningTaskListFirstNode.add(miningTaskFullBlock);
@@ -201,7 +205,8 @@ public class BlockchainTests {
                     unconfirmedTransactionsSecondNode,
                     miningTaskListSecondNode,
                     publicKeySecondUser,
-                    vNodesSecondNode);
+                    vNodesSecondNode,
+                    difficultyTarget);
         }
 
         try {
@@ -212,6 +217,27 @@ public class BlockchainTests {
 
         assertEquals(blockchainFirstNode.size(), blockchainSecondNode.size());
         assertEquals(utxosFirstNode.size(), utxosSecondNode.size());
+
+        // mine empty blocks until the difficulty target changes
+
+        for(int i = 1; i < blockchainFirstNode.size(); i++) {
+            assertEquals(blockchainFirstNode.get(i).getDifficultyTarget(), 1);
+        }
+
+        for(int i = 0; i < 25 - 11 + 1; i++) {
+            MiningTask miningTask = BlockUtil.generateEmptyBlock(blockchainFirstNode.get(blockchainFirstNode.size() - 1), publicKeyFirstUser, utxosFirstNode,unconfirmedTransactionsFirstNode.getTransactions(),blockchainFirstNode,vNodesFirstNode, difficultyTarget);
+            try {
+                miningTask.getThread().join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        assertEquals(blockchainFirstNode.size(), 26);
+        for(int i = 1; i < blockchainFirstNode.size() - 1; i++) {
+            assertEquals(blockchainFirstNode.get(i).getDifficultyTarget(), 1);
+        }
+        assertEquals(blockchainFirstNode.get(25).getDifficultyTarget(), 2);
     }
 
 }

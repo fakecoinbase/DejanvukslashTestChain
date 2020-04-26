@@ -11,6 +11,7 @@ import com.chain.api.core.Transaction.UTXO;
 import java.security.PublicKey;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CreateBlockThread implements Runnable {
     private volatile boolean exit = false;
@@ -23,8 +24,9 @@ public class CreateBlockThread implements Runnable {
     private List<Transaction> unconfirmedTransactions;
     private List<Block> blockchain;
     private List<CNode> vNodes;
+    private AtomicInteger difficultyTarget;
 
-    public CreateBlockThread(Block prevBlock, PublicKey nodeOwner,List<UTXO> utxos, int blockHeight,List<Transaction> transactions, List<Transaction> unconfirmedTransactions, List<Block> blockchain, List<CNode> vNodes) {
+    public CreateBlockThread(Block prevBlock, PublicKey nodeOwner,List<UTXO> utxos, int blockHeight,List<Transaction> transactions, List<Transaction> unconfirmedTransactions, List<Block> blockchain, List<CNode> vNodes, AtomicInteger difficultyTarget) {
         this.prevBlock = prevBlock;
         this.nodeOwnder = nodeOwner;
         this.utxos = utxos;
@@ -33,6 +35,7 @@ public class CreateBlockThread implements Runnable {
         this.unconfirmedTransactions = unconfirmedTransactions;
         this.blockchain = blockchain;
         this.vNodes = vNodes;
+        this.difficultyTarget = difficultyTarget;
     }
 
     public void stopMining(){
@@ -42,6 +45,13 @@ public class CreateBlockThread implements Runnable {
     @Override
     public void run() {
         Block block = generateBlock(prevBlock, nodeOwnder, blockHeight, transactions);
+
+        // Increase the difficulty every 25 blocks mined
+        if(blockchain.size() >= difficultyTarget.get() * 25) {
+            difficultyTarget.set(difficultyTarget.get() + 1);
+        }
+
+        block.setDifficultyTarget(difficultyTarget.get());
 
         mineBlock(block, blockHeight);
 

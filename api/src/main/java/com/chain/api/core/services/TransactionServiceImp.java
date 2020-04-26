@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 public class TransactionServiceImp implements TransactionService {
@@ -46,6 +47,13 @@ public class TransactionServiceImp implements TransactionService {
     private List<UTXO> unspentTransactionOutputs;
 
     private List<MiningTask> miningTaskList;
+
+    private AtomicInteger difficultyTarget;;
+
+    @Autowired
+    public void setDifficultyTarget(AtomicInteger difficultyTarget) {
+        this.difficultyTarget = difficultyTarget;
+    }
 
     @Autowired
     public void setMiningTaskList(List<MiningTask> miningTaskList) {
@@ -89,7 +97,8 @@ public class TransactionServiceImp implements TransactionService {
                     unconfirmedTransactions,
                     miningTaskList,
                     CryptoUtil.getPublicKeyFromString(publicKey),
-                    vNodes);
+                    vNodes,
+                    difficultyTarget);
 
             return new ResponseEntity<>(transaction, HttpStatus.CREATED);
         } catch (NoSuchAlgorithmException e) {

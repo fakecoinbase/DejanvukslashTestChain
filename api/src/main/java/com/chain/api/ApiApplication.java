@@ -21,6 +21,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @SpringBootApplication
 public class ApiApplication {
@@ -44,6 +45,10 @@ public class ApiApplication {
     @Bean
     @Scope("singleton")
     public List<MiningTask> miningTaskList() {return new ArrayList<>();}
+
+    @Bean
+    @Scope("singleton")
+    public AtomicInteger difficultyTarget() {return new AtomicInteger(1);}
 
     public static void main(String[] args) {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
