@@ -1,3 +1,0 @@
-Using RabbitMQ with separate queue's per node altho Websocket would've been a better choice for p2p communication
-
-keep a database of UTXO so we don't have to scan the blockchain everytime we make a transaction
