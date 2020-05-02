@@ -37,36 +37,16 @@ public class HandlePeerThread implements Runnable{
 
     private List<MiningTask> miningTaskList;
 
-    private AtomicInteger difficultyTarget;;
+    private AtomicInteger difficultyTarget;
 
-    @Autowired
-    public void setDifficultyTarget(AtomicInteger difficultyTarget) {
-        this.difficultyTarget = difficultyTarget;
-    }
-
-    @Autowired
-    public void setMiningTaskList(List<MiningTask> miningTaskList) {this.miningTaskList = miningTaskList;}
-
-    @Autowired
-    public void setUnspentTransactionOutputs(List<UTXO> unspentTransactionOutputs) {
-        this.unspentTransactionOutputs = unspentTransactionOutputs;
-    }
-
-    @Autowired
-    public void setvNodes(List<CNode> vNodes) {
-        this.vNodes = vNodes;
-    }
-
-    @Autowired
-    public void setBlockchain(List<Block> blockchain) {
-        this.blockchain = blockchain;
-    }
-
-    @Autowired
-    public void setUnconfirmedTransactions(UnconfirmedTransactions unconfirmedTransactions) { this.unconfirmedTransactions = unconfirmedTransactions; }
-
-    HandlePeerThread(CNode CNode) {
+    public HandlePeerThread(CNode CNode, List<CNode> vNodes, List<Block> blockchain, UnconfirmedTransactions unconfirmedTransactions, List<UTXO> unspentTransactionOutputs, List<MiningTask> miningTaskList, AtomicInteger difficultyTarget) {
         this.CNode = CNode;
+        this.vNodes = vNodes;
+        this.blockchain = blockchain;
+        this.unconfirmedTransactions = unconfirmedTransactions;
+        this.unspentTransactionOutputs = unspentTransactionOutputs;
+        this.miningTaskList = miningTaskList;
+        this.difficultyTarget = difficultyTarget;
     }
 
     @Override
@@ -178,7 +158,7 @@ public class HandlePeerThread implements Runnable{
                 CNode cNode = new CNode(socket);
 
                 // Handle peer on a different thread
-                Thread handlePeerThread = new Thread(new HandlePeerThread(cNode));
+                Thread handlePeerThread = new Thread(new HandlePeerThread(cNode, vNodes, blockchain, unconfirmedTransactions, unspentTransactionOutputs, miningTaskList, difficultyTarget));
                 handlePeerThread.start();
 
                 //  Add it to our list of known peers
