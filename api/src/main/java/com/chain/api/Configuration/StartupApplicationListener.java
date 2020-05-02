@@ -2,14 +2,19 @@ package com.chain.api.Configuration;
 
 import com.chain.api.core.Block.Block;
 import com.chain.api.core.Block.BlockUtil;
+import com.chain.api.core.Block.MineEmptyBlockThread;
 import com.chain.api.core.Crypto.CryptoUtil;
+import com.chain.api.core.Net.ListenThread;
+import com.chain.api.core.Net.MaintenanceThread;
 import com.chain.api.core.Net.MiningTask;
 import com.chain.api.core.Transaction.Transaction;
 import com.chain.api.core.Transaction.TransactionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Component;
 
 import java.security.KeyPair;
@@ -23,9 +28,15 @@ public class StartupApplicationListener implements ApplicationListener<ContextRe
     @Value("${app.PUBLIC_KEY}")
     private String publicKey;
 
+    private ApplicationContext ctx;
+
+    private TaskExecutor taskExecutor;
+
     @Autowired
-    public StartupApplicationListener(List<Block> blockchain) {
+    public StartupApplicationListener(List<Block> blockchain,  ApplicationContext ctx, TaskExecutor taskExecutor) {
         this.blockchain = blockchain;
+        this.ctx = ctx;
+        this.taskExecutor = taskExecutor;
     }
 
     @Override
@@ -56,5 +67,16 @@ public class StartupApplicationListener implements ApplicationListener<ContextRe
 
         System.out.println(genesisBlock);
 
+        //Thread maintenanceThread = new Thread(new MaintenanceThread());
+        //maintenanceThread.start();
+        taskExecutor.execute(ctx.getBean(MaintenanceThread.class));
+
+        //Thread listenThread = new Thread(new ListenThread(4000));
+        //listenThread.start();
+        taskExecutor.execute(ctx.getBean(ListenThread.class));
+
+        //Thread mineEmptyThread = new Thread(new MineEmptyBlockThread());
+        //mineEmptyThread.start();
+        taskExecutor.execute(ctx.getBean(MineEmptyBlockThread.class));
     }
 }

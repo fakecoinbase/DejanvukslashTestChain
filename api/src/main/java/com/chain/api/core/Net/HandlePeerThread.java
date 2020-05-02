@@ -6,6 +6,8 @@ import com.chain.api.core.Crypto.CryptoUtil;
 import com.chain.api.core.Transaction.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.Socket;

@@ -118,5 +118,7 @@ public class CreateBlockThread implements Runnable {
             }
             block.setNonce(block.getNonce() + 1);
         }
+
+        System.out.println("Block mined!");
     }
 }

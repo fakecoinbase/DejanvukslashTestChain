@@ -1,15 +1,23 @@
 package com.chain.api.core.Net;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 
+@Component
+@Scope("prototype")
 public class ListenThread implements Runnable {
-    @Autowired
     private List<CNode> vNodes;
+
+    @Autowired
+    public void setvNodes(List<CNode> vNodes) {
+        this.vNodes = vNodes;
+    }
 
     private ServerSocket serverSocket;
 

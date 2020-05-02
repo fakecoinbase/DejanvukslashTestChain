@@ -1,12 +1,16 @@
 package com.chain.api.core.Net;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 /**
  * Checks every second for dead peers and mining tasks that need to be removed from the list
  */
+@Component
+@Scope("prototype")
 public class MaintenanceThread implements Runnable {
 
     private List<CNode> vNodes;

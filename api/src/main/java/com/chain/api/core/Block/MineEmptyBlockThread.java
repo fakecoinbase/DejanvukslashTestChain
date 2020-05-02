@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -16,6 +18,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@Component
+@Scope("prototype")
 public class MineEmptyBlockThread implements Runnable  {
 
     Logger logger = LoggerFactory.getLogger(MineEmptyBlockThread.class);
@@ -39,7 +43,7 @@ public class MineEmptyBlockThread implements Runnable  {
     }
 
     @Autowired
-    public MineEmptyBlockThread(List<Block> blockchain) {
+    public void setBlockchain(List<Block> blockchain) {
         this.blockchain = blockchain;
     }
 
@@ -58,6 +62,7 @@ public class MineEmptyBlockThread implements Runnable  {
 
     @Override
     public void run() {
+        System.console().printf("Started mining block! \n");
         MiningTask miningTaskEmptyBlock = mineEmptyBlock();
 
         if(miningTaskEmptyBlock == null) {
@@ -66,8 +71,15 @@ public class MineEmptyBlockThread implements Runnable  {
         }
 
         while (true) {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
             if(!miningTaskEmptyBlock.getThread().isAlive()) {
                 if(readUserInput()) {
+                    System.console().printf("Started mining block! \n");
                     miningTaskEmptyBlock = mineEmptyBlock();
 
                     if(miningTaskEmptyBlock == null) {
@@ -81,12 +93,6 @@ public class MineEmptyBlockThread implements Runnable  {
                     miningTaskEmptyBlock.getCreateBlockThread().stopMining();
                     break;
                 }
-            }
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
     }

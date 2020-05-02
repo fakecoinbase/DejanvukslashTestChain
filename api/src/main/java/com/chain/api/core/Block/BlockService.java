@@ -1,8 +1,9 @@
 package com.chain.api.core.Block;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 public interface BlockService {
     /**
@@ -11,14 +12,14 @@ public interface BlockService {
      * @return
      */
     @GetMapping(value = "/block/{blockIndex}", produces = "application/json")
-    Mono<Block> getBlock(@PathVariable int blockIndex);
+    ResponseEntity<?> getBlock(@PathVariable int blockIndex);
 
     @PostMapping(value = "/block", consumes = "application/json", produces = "application/json")
-    Block addBlock(@RequestBody Block body);
+    ResponseEntity<?> addBlock(@RequestBody Block body);
 
     @GetMapping(value = "/block" ,produces = "application/json")
-    Flux<Block> getBlocks();
+    ResponseEntity<?> getBlocks();
 
     @GetMapping(value = "/start")
-    Mono<Block> startMine();
+    ResponseEntity<?> startMine();
 }

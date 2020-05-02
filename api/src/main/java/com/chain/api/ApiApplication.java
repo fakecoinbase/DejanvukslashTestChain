@@ -1,6 +1,7 @@
 package com.chain.api;
 
 import com.chain.api.core.Block.Block;
+import com.chain.api.core.Block.MineEmptyBlockThread;
 import com.chain.api.core.Crypto.CryptoUtil;
 import com.chain.api.core.Net.*;
 import com.chain.api.core.Transaction.Transaction;
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.env.Environment;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -52,12 +54,6 @@ public class ApiApplication {
 
     public static void main(String[] args) {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-
-        Thread maintenanceThread = new Thread(new MaintenanceThread());
-        maintenanceThread.start();
-
-        Thread listenThread = new Thread(new ListenThread(4000));
-        listenThread.start();
 
         SpringApplication.run(ApiApplication.class, args);
 
