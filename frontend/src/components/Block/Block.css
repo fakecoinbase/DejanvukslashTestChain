@@ -1,0 +1,17 @@
+#link-prev {
+    color: #007bff;
+    cursor: pointer;
+}
+
+#link-prev:hover {
+    text-decoration: underline;
+}
+
+.block {
+    margin: 10px 10px 10px 10px;
+}
+
+#h5-block-transactions {
+    font-weight: bold;
+    font-size: 2.0rem;
+}

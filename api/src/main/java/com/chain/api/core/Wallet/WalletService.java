@@ -8,6 +8,6 @@ public interface WalletService {
     @GetMapping(value = "/wallet/{walletPublicKey}", produces = "application/json")
     ResponseEntity<?> getUsersBalance(@PathVariable String walletPublicKey);
 
-    @GetMapping(value = "/wallet/", produces = "application/json")
+    @GetMapping(value = "/wallet", produces = "application/json")
     ResponseEntity<?> generateWallet();
 }

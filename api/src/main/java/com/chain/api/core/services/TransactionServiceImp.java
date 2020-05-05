@@ -28,11 +28,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @RestController
 public class TransactionServiceImp implements TransactionService {
 
     Logger logger = LoggerFactory.getLogger(TransactionServiceImp.class);
+
+    private TransactionMapper transactionMapper;
 
     private List<CNode> vNodes;
 
@@ -48,6 +52,11 @@ public class TransactionServiceImp implements TransactionService {
     private List<MiningTask> miningTaskList;
 
     private AtomicInteger difficultyTarget;;
+
+    @Autowired
+    public void setTransactionMapper(TransactionMapper transactionMapper) {
+        this.transactionMapper = transactionMapper;
+    }
 
     @Autowired
     public void setDifficultyTarget(AtomicInteger difficultyTarget) {
@@ -79,6 +88,7 @@ public class TransactionServiceImp implements TransactionService {
 
     @Override
     public ResponseEntity<?> createTransaction(TransactionPayload payload, BindingResult bindingResult) {
+
         ResponseEntity<?> errors = validateResult(bindingResult);
 
         if(errors != null) {
@@ -88,6 +98,9 @@ public class TransactionServiceImp implements TransactionService {
 
         try {
             Transaction transaction = TransactionUtil.createTransaction(payload.getFrom(), payload.getTo(), payload.getValue(), unspentTransactionOutputs, unconfirmedTransactions.getTransactions(), blockchain.size());
+
+            System.out.println("00000000");
+            System.out.println(transaction);
 
             TransactionUtil.handleTransaction(
                     transaction,
@@ -99,7 +112,7 @@ public class TransactionServiceImp implements TransactionService {
                     vNodes,
                     difficultyTarget);
 
-            return new ResponseEntity<>(transaction, HttpStatus.CREATED);
+            return new ResponseEntity<>(transactionMapper.transactionToTransactionResponse(transaction), HttpStatus.CREATED);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (NoSuchProviderException e) {
@@ -108,6 +121,13 @@ public class TransactionServiceImp implements TransactionService {
             e.printStackTrace();
         }
         return null;
+    }
+
+    @Override
+    public ResponseEntity<?> getTransactions() {
+        List<TransactionResponse> txResponseList = unconfirmedTransactions.getTransactions().stream().map(tx -> transactionMapper.transactionToTransactionResponse(tx)).collect(Collectors.toList());
+
+        return new ResponseEntity<>(txResponseList, HttpStatus.OK);
     }
 
     public ResponseEntity<?> validateResult(BindingResult bindingResult) {

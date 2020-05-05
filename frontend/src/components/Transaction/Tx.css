@@ -1,0 +1,16 @@
+.transaction {
+  border-bottom: 2px solid rgb(12, 108, 242);
+  padding: 20px;
+}
+
+.transaction:hover {
+    background: #E0FAF9
+}
+
+#confirmed-tx {
+  color: #58FC26
+}
+
+#unconfirmed-tx {
+  color: #FF0000
+}

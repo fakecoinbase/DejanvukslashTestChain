@@ -1,5 +1,7 @@
 const htmlWebpackPlugin = require('html-webpack-plugin');
 
+const webpack = require('webpack');
+
 module.exports = {
     devtool: 'cheap-module-source-map',
     module: {

@@ -1,0 +1,23 @@
+#dropdown-basic-button {
+    width: 100px;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+#search-button {
+    height: 20px;
+    width: 50px;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.explorer {
+    margin-top: 15px;
+}
+
+#explorer-h5 {
+    font-weight: 700;
+    font-size: 1.6rem;
+    text-transform: none;
+    font-style: normal;
+}

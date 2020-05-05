@@ -1,0 +1,45 @@
+button {
+    display: inline-block;
+    font-weight: 600;
+    text-align: center;
+    min-height: 4rem;
+    height: 100%;
+    width: 100%;
+    color: rgb(255, 255, 255);
+    opacity: 1;
+    font-size: 1.5rem;
+    line-height: 2.5rem;
+    outline: none;
+    transition: all 0.3s ease 0s;
+    flex: 0 0 auto;
+    border-radius: 4px;
+    padding: 0px 1rem;
+    border-width: initial;
+    border-style: initial;
+    border-color: transparent;
+    border-image: initial;
+}
+
+#btnHomeLeft {
+    background-color: rgb(12, 108, 242);
+}
+
+
+#btnHomeRight {
+    background-color: rgb(242, 139, 36);
+}
+
+div.statistics {
+    clear:both;
+    height: 125px;
+    background-color: rgb(19, 28, 50);
+}
+
+.wallets-statistics, .transactions-statistics, .blocks-statistics {
+    color: #ffffff;
+    margin-top: 25px;
+}
+
+.first {
+    margin-top: 75px;
+}
