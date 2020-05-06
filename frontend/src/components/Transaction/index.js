@@ -2,6 +2,8 @@ import React, {Component} from 'react';
 
 import BASE_URL from '../../Constants';
 
+import { Link } from 'react-router-dom';
+
 import { withRouter } from 'react-router-dom';
 
 import './Tx.css';
@@ -11,15 +13,9 @@ class Transaction extends Component {
         super(props);
     }
 
-    handleChange(event) {
-    }
-
-    async handleSubmit(event) {
-    }
-
     render() {
 
-        const { txid, sender, receiver, value, inputs, outputs, confirmed} = this.props;
+        const { txid, sender, receiver, value, inputs, outputs, verified} = this.props;
 
         const outputsList = outputs.map((output,index) => (
             <li key={index}>
@@ -27,11 +23,10 @@ class Transaction extends Component {
             </li>
         ));
 
-
         return (
             <div className="transaction">
                 <div>
-                    Hash: {txid}
+                <Link to={"/tx/"+ txid} > Hash: {txid} </Link>
                 </div>
 
                 {/* add inputs */}
@@ -44,7 +39,7 @@ class Transaction extends Component {
                 </div>
 
                 <div>
-                    { confirmed == true ?  <h3 id="confirmed-tx">CONFIRMED</h3> : <h3 id="unconfirmed-tx">UNCONFIRMED</h3>}
+                    { verified == true ?  <h3 id="confirmed-tx">CONFIRMED</h3> : <h3 id="unconfirmed-tx">UNCONFIRMED</h3>}
                 </div>
             </div>
         );

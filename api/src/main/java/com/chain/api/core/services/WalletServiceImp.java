@@ -32,6 +32,8 @@ public class WalletServiceImp implements WalletService {
 
     @Override
     public ResponseEntity<?> getUsersBalance(String walletPublicKey) {
+        System.out.println(walletPublicKey);
+
         if(walletPublicKey.isBlank()) {
             logger.error("Wallet's public key is blank!");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -41,6 +43,8 @@ public class WalletServiceImp implements WalletService {
             PublicKey userPublicKey = CryptoUtil.getPublicKeyFromString(walletPublicKey);
 
             String userBalance = Float.toString(TransactionUtil.getUsersBalance(TransactionUtil.getUserUtxos(userPublicKey, unspentTransactionOutputs)));
+
+            System.out.println(userBalance);
 
             return new ResponseEntity<>(userBalance, HttpStatus.OK);
         } catch (NoSuchProviderException e) {

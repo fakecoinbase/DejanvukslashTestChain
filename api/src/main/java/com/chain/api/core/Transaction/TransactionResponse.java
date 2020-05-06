@@ -20,6 +20,8 @@ public class TransactionResponse {
 
     private boolean isVerified;
 
+    private String ownerBlock;
+
     private List<TransactionInput> inputs;
     private List<TransactionOutputResponse> outputs;
 }

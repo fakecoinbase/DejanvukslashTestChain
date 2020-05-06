@@ -9,6 +9,8 @@ import Row from 'react-bootstrap/Row';
 import Transaction from '../Transaction';
 import Pages from '../Pages';
 
+import { Link } from 'react-router-dom';
+
 import './Block.css';
 
 class Block extends Component {
@@ -33,12 +35,6 @@ class Block extends Component {
         await this.fetchBlockData(this.props.match.params.hash);
     }
 
-    async componentDidUpdate(prevProps) {
-        if(prevProps.match.params.hash !== this.props.match.params.hash){
-            await this.fetchBlockData(this.props.match.params.hash);
-        }
-    }
-
     async fetchBlockData(hash) {
         await fetch('http://localhost:8080/' + 'block/' + hash, {
             method: 'GET',
@@ -49,6 +45,12 @@ class Block extends Component {
         }).then(response => response.json()).then(block => {
             this.setState({ block });
         });
+    }
+
+    async componentDidUpdate(prevProps) {
+        if(prevProps.match.params.hash !== this.props.match.params.hash){
+            await this.fetchBlockData(this.props.match.params.hash);
+        }
     }
 
     handleClick(page) {
@@ -66,9 +68,9 @@ class Block extends Component {
         const indexFirstTx = indexLastTx - 20;
         const currTxs = transactions.slice(indexFirstTx, indexLastTx);
 
-        const txRows = currTxs.map(tx =>
+        const txRows = currTxs.map((tx, index) =>
             (
-                <Transaction {...tx} confirmed={true}></Transaction>
+                <Transaction key={index} {...tx} ></Transaction>
             )
         )
 
@@ -98,7 +100,7 @@ class Block extends Component {
                             Previous Block
                         </Form.Label>
                         <Col sm="10">
-                        <a id="link-prev" onClick={() => {this.props.history.push('/block/' + previousHash);}} >{previousHash}</a>
+                        <Link to={"/block/"+ previousHash} > {previousHash} </Link>
                         </Col>
                     </Form.Group>
 

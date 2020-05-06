@@ -94,7 +94,7 @@ class Explorer extends Component {
 
             const txRows = txs.slice(-15).reverse().map(tx =>
                 (
-                    <Transaction key={tx.txid} {...tx} confirmed={false}></Transaction>
+                    <Transaction key={tx.txid} {...tx}></Transaction>
                 )
             )
 

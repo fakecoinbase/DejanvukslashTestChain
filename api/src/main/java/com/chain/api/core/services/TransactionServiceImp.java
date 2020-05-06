@@ -114,6 +114,7 @@ public class TransactionServiceImp implements TransactionService {
 
             TransactionResponse txResponse = transactionMapper.transactionToTransactionResponse(transaction);
             txResponse.setVerified(TransactionUtil.isVerified(transaction, unconfirmedTransactions.getTransactions()));
+            txResponse.setOwnerBlock("");
 
             return new ResponseEntity<>(txResponse, HttpStatus.CREATED);
         } catch (NoSuchAlgorithmException e) {
@@ -131,6 +132,7 @@ public class TransactionServiceImp implements TransactionService {
         List<TransactionResponse> txResponseList = unconfirmedTransactions.getTransactions().stream().map(tx -> {
             TransactionResponse txResponse = transactionMapper.transactionToTransactionResponse(tx);
             txResponse.setVerified(TransactionUtil.isVerified(tx, unconfirmedTransactions.getTransactions()));
+            txResponse.setOwnerBlock("");
             return txResponse;
         }).collect(Collectors.toList());
 
@@ -144,6 +146,8 @@ public class TransactionServiceImp implements TransactionService {
         if(tx != null) {
             TransactionResponse txResponse = transactionMapper.transactionToTransactionResponse(tx);
             txResponse.setVerified(TransactionUtil.isVerified(tx, unconfirmedTransactions.getTransactions()));
+            txResponse.setOwnerBlock(findBlockWithTx(txResponse.getTXID(), blockchain));
+
             return new ResponseEntity<>(txResponse, HttpStatus.FOUND);
         }
 
@@ -156,8 +160,24 @@ public class TransactionServiceImp implements TransactionService {
             for(FieldError error: bindingResult.getFieldErrors()) {
                 errorMap.put(error.getField(), error.getDefaultMessage());
             }
-            return new ResponseEntity<Map<String,String>>(errorMap, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(errorMap, HttpStatus.BAD_REQUEST);
         }
         else return null;
+    }
+
+    /*
+    Only to be used here,normally the BlockResponse would be generated after block was mined
+    and its transactions updated with the corresponding block' hash
+     */
+    private String findBlockWithTx(String txid, List<Block> blockchain) {
+
+        Objects.requireNonNull(blockchain, "The list of block's is null!");
+
+        for(int i = 0; i < blockchain.size(); i++) {
+            Block block = blockchain.get(i);
+            Transaction trans = block.getTransactions().stream().filter(transaction -> transaction.getTXID().equals(txid)).findAny().orElse(null);
+            if(trans != null) return block.getHash();
+        }
+        return "";
     }
 }

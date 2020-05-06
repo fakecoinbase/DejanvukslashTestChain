@@ -6,7 +6,6 @@ import Pages from '../Pages';
 
 import Transaction from '../Transaction';
 
-
 import { withRouter } from 'react-router-dom';
 
 import './TxView.css';
@@ -49,7 +48,7 @@ class TransactionsView extends Component {
 
         const txRows = currTxs.map((tx,index) =>
             (
-                <Transaction key={index} {...tx} confirmed={false}></Transaction>
+                <Transaction key={index} {...tx}></Transaction>
             )
         )
 
