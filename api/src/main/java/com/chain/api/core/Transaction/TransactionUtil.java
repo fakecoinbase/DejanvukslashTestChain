@@ -286,6 +286,23 @@ public class TransactionUtil {
         return null;
     }
 
+    /**
+     * If the transaction isn't found in the unconfirmed transaction memory pool than it is considered varified
+     * @param tx
+     * @param unconfirmedTransactions
+     * @return
+     */
+    public static boolean isVerified(Transaction tx,List<Transaction> unconfirmedTransactions) {
+
+        Objects.requireNonNull(unconfirmedTransactions, "Unconfirmed transactions list is null!");
+
+        String TXID = tx.getTXID();
+
+        Transaction unconfirmedTransaction = unconfirmedTransactions.stream().filter(utx -> utx.getTXID().equals(TXID)).findAny().orElse(null);
+
+        return unconfirmedTransaction == null;
+    }
+
     public static boolean verifyTransaction(Transaction transaction,List<Block> blockchain, Integer blockHeight) {
 
         Objects.requireNonNull(transaction, "Transaction is null!");
@@ -623,5 +640,6 @@ public class TransactionUtil {
         Thread thread = new Thread(() -> NetUtil.sendTransactionToAllPeers(transaction, vNodes));
         thread.start();
     }
+
 
 }

@@ -18,6 +18,8 @@ public class TransactionResponse {
     private String receiver;
     private float value;
 
+    private boolean isVerified;
+
     private List<TransactionInput> inputs;
     private List<TransactionOutputResponse> outputs;
 }

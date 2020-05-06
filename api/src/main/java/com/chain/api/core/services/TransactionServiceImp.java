@@ -112,7 +112,10 @@ public class TransactionServiceImp implements TransactionService {
                     vNodes,
                     difficultyTarget);
 
-            return new ResponseEntity<>(transactionMapper.transactionToTransactionResponse(transaction), HttpStatus.CREATED);
+            TransactionResponse txResponse = transactionMapper.transactionToTransactionResponse(transaction);
+            txResponse.setVerified(TransactionUtil.isVerified(transaction, unconfirmedTransactions.getTransactions()));
+
+            return new ResponseEntity<>(txResponse, HttpStatus.CREATED);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (NoSuchProviderException e) {
@@ -124,10 +127,27 @@ public class TransactionServiceImp implements TransactionService {
     }
 
     @Override
-    public ResponseEntity<?> getTransactions() {
-        List<TransactionResponse> txResponseList = unconfirmedTransactions.getTransactions().stream().map(tx -> transactionMapper.transactionToTransactionResponse(tx)).collect(Collectors.toList());
+    public ResponseEntity<?> getUnconfirmedTransactions() {
+        List<TransactionResponse> txResponseList = unconfirmedTransactions.getTransactions().stream().map(tx -> {
+            TransactionResponse txResponse = transactionMapper.transactionToTransactionResponse(tx);
+            txResponse.setVerified(TransactionUtil.isVerified(tx, unconfirmedTransactions.getTransactions()));
+            return txResponse;
+        }).collect(Collectors.toList());
 
         return new ResponseEntity<>(txResponseList, HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> getTransaction(String txid) {
+        Transaction tx = TransactionUtil.findTransaction(txid, blockchain);
+
+        if(tx != null) {
+            TransactionResponse txResponse = transactionMapper.transactionToTransactionResponse(tx);
+            txResponse.setVerified(TransactionUtil.isVerified(tx, unconfirmedTransactions.getTransactions()));
+            return new ResponseEntity<>(txResponse, HttpStatus.FOUND);
+        }
+
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     public ResponseEntity<?> validateResult(BindingResult bindingResult) {
