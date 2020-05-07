@@ -302,6 +302,22 @@ public class TransactionUtil {
         return null;
     }
 
+    /*
+    Only to be used here,normally the BlockResponse would be generated after block was mined
+    and its transactions updated with the corresponding block' hash
+     */
+    public static String findBlockWithTx(String txid, List<Block> blockchain) {
+
+        Objects.requireNonNull(blockchain, "The list of block's is null!");
+
+        for(int i = 0; i < blockchain.size(); i++) {
+            Block block = blockchain.get(i);
+            Transaction trans = block.getTransactions().stream().filter(transaction -> transaction.getTXID().equals(txid)).findAny().orElse(null);
+            if(trans != null) return block.getHash();
+        }
+        return "";
+    }
+
     /**
      * If the transaction isn't found in the unconfirmed transaction memory pool than it is considered varified
      * @param tx

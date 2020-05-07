@@ -9,6 +9,8 @@ import TransactionSend from '../TransactionSend';
 import TransactionsView from '../TransactionsView';
 import BlockchainView from '../BlockchainVIew';
 import TransactionDetails from '../TransactionDetails';
+import Wallet from '../Wallet';
+import Address from '../Address';
 
 import './App.css';
 
@@ -30,6 +32,8 @@ class App extends Component {
               <Route path='/tx/view' exact={true} component={TransactionsView} />
               <Route path='/blockchain' exact={true} component={BlockchainView} />
               <Route path='/tx/:txid' component={TransactionDetails} />
+              <Route path='/wallet' exact={true} component={Wallet} />
+              <Route path='/address/:publicKey' component={Address} />
             </Switch>
           </BrowserRouter>
         </div>

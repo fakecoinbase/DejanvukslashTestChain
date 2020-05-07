@@ -150,7 +150,7 @@ public class TransactionServiceImp implements TransactionService {
         if(tx != null) {
             TransactionResponse txResponse = transactionMapper.transactionToTransactionResponse(tx);
             txResponse.setVerified(TransactionUtil.isVerified(tx, unconfirmedTransactions.getTransactions())); // true
-            txResponse.setOwnerBlock(findBlockWithTx(txResponse.getTXID(), blockchain));
+            txResponse.setOwnerBlock(TransactionUtil.findBlockWithTx(txResponse.getTXID(), blockchain));
 
             return new ResponseEntity<>(txResponse, HttpStatus.FOUND);
         }
@@ -179,21 +179,5 @@ public class TransactionServiceImp implements TransactionService {
             return new ResponseEntity<>(errorMap, HttpStatus.BAD_REQUEST);
         }
         else return null;
-    }
-
-    /*
-    Only to be used here,normally the BlockResponse would be generated after block was mined
-    and its transactions updated with the corresponding block' hash
-     */
-    private String findBlockWithTx(String txid, List<Block> blockchain) {
-
-        Objects.requireNonNull(blockchain, "The list of block's is null!");
-
-        for(int i = 0; i < blockchain.size(); i++) {
-            Block block = blockchain.get(i);
-            Transaction trans = block.getTransactions().stream().filter(transaction -> transaction.getTXID().equals(txid)).findAny().orElse(null);
-            if(trans != null) return block.getHash();
-        }
-        return "";
     }
 }

@@ -10,4 +10,7 @@ public interface WalletService {
 
     @GetMapping(value = "/wallet", produces = "application/json")
     ResponseEntity<?> generateWallet();
+
+    @GetMapping(value = "/address/{walletPublicKey}", produces = "application/json")
+    ResponseEntity<?> getUsersTransaction(@PathVariable String walletPublicKey);
 }

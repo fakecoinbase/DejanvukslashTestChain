@@ -15,24 +15,28 @@ class Transaction extends Component {
 
     render() {
 
-        const { txid, sender, receiver, value, inputs, outputs, verified} = this.props;
+        const { txid, sender, receiver, value, inputs, outputs, verified , isSent} = this.props;
 
         const outputsList = outputs.map((output,index) => (
             <li key={index}>
-                {output.to} {output.value} TC
+                Receiver: <Link to={"/address/"+ output.to }>{output.to} </Link> {output.value} TC
             </li>
         ));
 
         return (
             <div className="transaction">
                 <div>
-                <Link to={"/tx/"+ txid} > Hash: {txid} </Link>
+                Txid: <Link to={"/tx/"+ txid} > {txid} </Link>
+                </div>
+                    
+                <div>
+                Value: {(isSent != true) ? <span> - {value} </span> : <span> {value} </span>} 
                 </div>
 
                 {/* add inputs */}
 
                 <div>
-                    { (sender === "") ? "COINBASE" : sender} { value } TC
+                    Sender: { (sender === "") ? "COINBASE" : <Link to={"/address/"+ sender }> {sender} </Link>} 
                     <ul>
                         { outputsList }
                     </ul>

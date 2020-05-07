@@ -70,7 +70,7 @@ class Block extends Component {
 
         const txRows = currTxs.map((tx, index) =>
             (
-                <Transaction key={index} {...tx} ></Transaction>
+                <Transaction key={index} {...tx} isSent={true}></Transaction>
             )
         )
 

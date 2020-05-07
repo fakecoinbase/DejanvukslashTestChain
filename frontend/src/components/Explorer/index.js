@@ -61,6 +61,7 @@ class Explorer extends Component {
             return (
                 <div className="blocks-table">
                     <h5> Latest blocks </h5>
+                    <Link to={"/blockchain"}><h3>View all blocks</h3></Link>
                     <Table responsive>
                         <thead>
                             <tr>
@@ -94,14 +95,14 @@ class Explorer extends Component {
 
             const txRows = txs.slice(-15).reverse().map(tx =>
                 (
-                    <Transaction key={tx.txid} {...tx}></Transaction>
+                    <Transaction key={tx.txid} {...tx} isSent={true}></Transaction>
                 )
             )
 
             return (
                 <div className="transactions-table">
                     <h5> Transactions </h5>
-                    <Link to={"/tx/view"}>View all transactions</Link>
+                    <Link to={"/tx/view"}><h3>View all transactions</h3></Link>
                     { txRows }
                 </div>
             );

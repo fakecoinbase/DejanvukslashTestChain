@@ -29,13 +29,11 @@ class TransactionDetails extends Component {
     }
 
     componentWillUnmount() {
-        // fix Warning: Can't perform a React state update on an unmounted component
         this._jsMounted = false;
     }
 
 
     async fetchTransactionData(txid) {
-        console.log("insidetrans");
         await fetch('http://localhost:8080/' + 'transaction/' + txid, {
             method: 'GET',
             headers: {
@@ -69,7 +67,7 @@ class TransactionDetails extends Component {
     
             const outputsList = transaction.outputs.map((output, index) => (
                 <li key={index}>
-                    Owner: {output.to}
+                    Owner: {output.to + " "}
                     Value: {output.value} TC
                 </li>
             ));

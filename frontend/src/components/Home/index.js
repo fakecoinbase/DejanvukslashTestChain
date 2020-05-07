@@ -6,6 +6,7 @@ import Explorer from '../Explorer';
 
 import { withRouter } from 'react-router-dom';
 
+
 import './Home.css';
 
 class Home extends Component {
@@ -57,8 +58,8 @@ class Home extends Component {
                         <div className="row first">
                             <div className="col-sm-4"></div>
                             <div className="col-sm-4">
-                                <Button className="homeButtons" id="btnHomeRight" className="btnHome" onClick={() => { this.props.history.push('/blockchain'); }}>
-                                    Blockchain
+                                <Button className="homeButtons" id="btnHomeRight" className="btnHome" onClick={() => { this.props.history.push('/wallet'); }}>
+                                    Create Wallet
                             </Button>
                             </div>
                             <div className="col-sm-4"></div>
