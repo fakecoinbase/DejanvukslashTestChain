@@ -63,12 +63,7 @@ public class MineEmptyBlockThread implements Runnable  {
     @Override
     public void run() {
         System.console().printf("Started mining block! \n");
-        MiningTask miningTaskEmptyBlock = mineEmptyBlock();
-
-        if(miningTaskEmptyBlock == null) {
-            System.console().printf("Failed to mine! \n");
-            return;
-        }
+        MiningTask miningTaskEmptyBlock = null;
 
         while (true) {
             try {
@@ -76,8 +71,8 @@ public class MineEmptyBlockThread implements Runnable  {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
-            if(!miningTaskEmptyBlock.getThread().isAlive()) {
+            
+            do {
                 if(readUserInput()) {
                     System.console().printf("Started mining block! \n");
                     miningTaskEmptyBlock = mineEmptyBlock();
@@ -94,6 +89,7 @@ public class MineEmptyBlockThread implements Runnable  {
                     break;
                 }
             }
+            while(!miningTaskEmptyBlock.getThread().isAlive());
         }
     }
 

@@ -44,7 +44,7 @@ class TransactionDetails extends Component {
             }
         }).then(response => response.json()).then(transaction => {
             if(this._jsMounted) this.setState({ transaction });
-        });
+        }).catch(error => {console.log("failed fetch")});
     }
 
     async componentDidUpdate(prevProps) {
@@ -129,7 +129,8 @@ class TransactionDetails extends Component {
                                 Included in block: 
                             </Form.Label>
                             <Col sm="10">
-                            <Link to={"/block/"+ transaction.ownerBlock} > {transaction.ownerBlock} </Link>
+                                {transaction.ownerBlock == "" ? <h3> MEMPOOL </h3> :
+                                 <Link to={"/block/"+ transaction.ownerBlock} > {transaction.ownerBlock} </Link>}
                             </Col>
                         </Form.Group>
                     </Form>

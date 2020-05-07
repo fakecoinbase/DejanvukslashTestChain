@@ -131,7 +131,7 @@ public class TransactionServiceImp implements TransactionService {
     public ResponseEntity<?> getUnconfirmedTransactions() {
         List<TransactionResponse> txResponseList = unconfirmedTransactions.getTransactions().stream().map(tx -> {
             TransactionResponse txResponse = transactionMapper.transactionToTransactionResponse(tx);
-            txResponse.setVerified(TransactionUtil.isVerified(tx, unconfirmedTransactions.getTransactions()));
+            txResponse.setVerified(TransactionUtil.isVerified(tx, unconfirmedTransactions.getTransactions())); // false
             txResponse.setOwnerBlock("");
             return txResponse;
         }).collect(Collectors.toList());
@@ -141,12 +141,28 @@ public class TransactionServiceImp implements TransactionService {
 
     @Override
     public ResponseEntity<?> getTransaction(String txid) {
-        Transaction tx = TransactionUtil.findTransaction(txid, blockchain);
+
+        Transaction tx;
+
+        // first search in blockchain
+        tx = TransactionUtil.findTransaction(txid, blockchain);
 
         if(tx != null) {
             TransactionResponse txResponse = transactionMapper.transactionToTransactionResponse(tx);
-            txResponse.setVerified(TransactionUtil.isVerified(tx, unconfirmedTransactions.getTransactions()));
+            txResponse.setVerified(TransactionUtil.isVerified(tx, unconfirmedTransactions.getTransactions())); // true
             txResponse.setOwnerBlock(findBlockWithTx(txResponse.getTXID(), blockchain));
+
+            return new ResponseEntity<>(txResponse, HttpStatus.FOUND);
+        }
+
+        // then search in unconfirmed transactions if it's not found in blockchain
+
+        tx = TransactionUtil.findUnconfirmedTransaction(txid, unconfirmedTransactions.getTransactions());
+
+        if(tx != null) {
+            TransactionResponse txResponse = transactionMapper.transactionToTransactionResponse(tx);
+            txResponse.setVerified(TransactionUtil.isVerified(tx, unconfirmedTransactions.getTransactions())); // false
+            txResponse.setOwnerBlock("");
 
             return new ResponseEntity<>(txResponse, HttpStatus.FOUND);
         }

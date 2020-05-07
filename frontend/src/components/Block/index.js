@@ -109,7 +109,7 @@ class Block extends Component {
                             Timestamp
                         </Form.Label>
                         <Col sm="10">
-                            {timestamp}
+                            {new Date(timestamp).toGMTString()}
                         </Col>
                     </Form.Group>
 

@@ -269,6 +269,22 @@ public class TransactionUtil {
     }
 
     /**
+     * Find the transaction with the specific transaction id in the memory pool
+     * @param TXID
+     * @param unconfirmedTransactions
+     * @return
+     */
+    public static Transaction findUnconfirmedTransaction(String TXID, List<Transaction> unconfirmedTransactions) {
+
+        Objects.requireNonNull(unconfirmedTransactions, "Unconfirmed transactions list is null!");
+
+        Transaction trans = unconfirmedTransactions.stream().filter(transaction -> transaction.getTXID().equals(TXID)).findAny().orElse(null);
+
+        return trans;
+
+    }
+
+    /**
      * Find the transaction with the specific transaction id in the blockchain
      * @param TXID
      * @param blockchain
