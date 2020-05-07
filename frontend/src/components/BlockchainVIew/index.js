@@ -63,7 +63,7 @@ class BlockchainView extends Component {
             <div className="blockchain-table">
                 <h5> Latest blocks </h5>
 
-                <Pages perRow = {30} transactionsLength={blocks.length} handleClick={this.handleClick.bind(this)}></Pages>
+                <Pages currentPage={currentPage} perRow = {30} transactionsLength={blocks.length} handleClick={this.handleClick.bind(this)}></Pages>
 
                 <Table responsive>
                     <thead>

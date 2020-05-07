@@ -57,7 +57,7 @@ class TransactionsView extends Component {
                 <div className="blockchain-table">
                     <h5> Unconfirmed Transactions </h5>
 
-                    <Pages perRow = {30} transactionsLength={transactions.length} handleClick={this.handleClick.bind(this)}></Pages>
+                    <Pages currentPage={currentPage} perRow = {30} transactionsLength={transactions.length} handleClick={this.handleClick.bind(this)}></Pages>
 
                     {txRows}
                 </div>

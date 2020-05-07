@@ -553,10 +553,10 @@ public class TransactionUtil {
 
         transaction = new Transaction(1,
                 (short) 1,
-                generateTransactionId(inputs,outputs,CryptoUtil.getStringFromKey(fromKey),CryptoUtil.getStringFromKey(toKey),value, blockHeight),
+                generateTransactionId(inputs,outputs,CryptoUtil.getStringFromKey(fromKey),CryptoUtil.getStringFromKey(toKey),utxosToBeRemovedValue, blockHeight),
                 fromKey,
                 toKey,
-                value,
+                utxosToBeRemovedValue, // TOTAL VALUE
                 inputs,
                 outputs);
 

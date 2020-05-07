@@ -153,7 +153,7 @@ class Block extends Component {
                 <div className="blockchain-table">
                     <h5 id="h5-block-transactions"> Block's transactions </h5>
 
-                    <Pages perRow={20} transactionsLength={transactions.length} handleClick={this.handleClick.bind(this)} ></Pages>
+                    <Pages currentPage={currentPage} perRow={20} transactionsLength={transactions.length} handleClick={this.handleClick.bind(this)} ></Pages>
 
                     {txRows}
                 </div>

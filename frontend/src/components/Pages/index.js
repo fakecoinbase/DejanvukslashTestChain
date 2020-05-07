@@ -14,7 +14,7 @@ class Pages extends Component {
     }
 
     render() {
-        const { transactionsLength, perRow } = this.props;
+        const { transactionsLength, perRow, currentPage } = this.props;
 
         const pages = [];
         for (let i = 1; i <= Math.ceil(transactionsLength / perRow); i++) {
@@ -23,7 +23,7 @@ class Pages extends Component {
 
         const pagesList = pages.map(page => {
             return (
-                <ListGroup.Item variant="light" key={page} id={page} onClick={() => {this.props.handleClick(page)}}>
+                <ListGroup.Item active={currentPage == page} variant="light" key={page} id={page} onClick={() => {this.props.handleClick(page)}}>
                     {page}
                 </ListGroup.Item>
             );
