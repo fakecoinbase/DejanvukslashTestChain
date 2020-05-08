@@ -53,6 +53,8 @@ public class WalletServiceImp implements WalletService {
     @Autowired
     public void setUnconfirmedTransactions(UnconfirmedTransactions unconfirmedTransactions) { this.unconfirmedTransactions = unconfirmedTransactions; }
 
+
+
     @Override
     public ResponseEntity<?> getUsersBalance(String walletPublicKey) {
         System.out.println(walletPublicKey);
@@ -101,8 +103,6 @@ public class WalletServiceImp implements WalletService {
         List<TransactionResponse> sentTransactions = new ArrayList<>();
         List<TransactionResponse> receivedTransactions = new ArrayList<>();
 
-        System.out.println(walletPublicKey);
-
         // skip the genesis block
         for(int i = 1; i < blockchain.size(); i++) {
 
@@ -133,7 +133,18 @@ public class WalletServiceImp implements WalletService {
 
         }
 
-        UserTransactionsResponse userTransactionsResponse = new UserTransactionsResponse(sentTransactions, receivedTransactions);
+        UserTransactionsResponse userTransactionsResponse = null;
+        try {
+            userTransactionsResponse = new UserTransactionsResponse(sentTransactions,
+                    receivedTransactions,
+                    TransactionUtil.getUsersBalance(TransactionUtil.getUserUtxos(CryptoUtil.getPublicKeyFromString(walletPublicKey), unspentTransactionOutputs)));
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
 
         return new ResponseEntity<>(userTransactionsResponse, HttpStatus.OK);
 
@@ -141,13 +152,14 @@ public class WalletServiceImp implements WalletService {
 
     @Getter
     @Setter
+    @NoArgsConstructor
     @ToString
     @EqualsAndHashCode
-    @NoArgsConstructor
     @AllArgsConstructor
     private class UserTransactionsResponse {
         List<TransactionResponse> sentTransactions;
         List<TransactionResponse> receivedTransactions;
+        float totalBalance;
     }
 
 }

@@ -6,6 +6,7 @@ import com.chain.api.core.Crypto.CryptoUtil;
 import com.chain.api.core.Net.CNode;
 import com.chain.api.core.Net.MiningTask;
 import com.chain.api.core.Net.NetUtil;
+import com.chain.api.core.Transaction.exceptions.CreateTransactionException;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 
 import java.security.NoSuchAlgorithmException;
@@ -45,13 +46,11 @@ public class TransactionUtil {
             // find the UTXO it references
             UTXO tempUtxo = utxos.stream().filter(utxo -> utxo.getPreviousTx().equals(txi.getPreviousTx()) && utxo.getIndex() == txi.getIndex()).findAny().orElse(null);
             if(tempUtxo == null) {
-                System.out.println("Input doesn't match output!");
-                return false;
+                throw new CreateTransactionException("Input doesn't match output!");
             }
             try {
                 if(!CryptoUtil.getStringFromKey(tempUtxo.getOwner()).equals(CryptoUtil.getStringFromKey(CryptoUtil.DerivePubKeyFromPrivKey((BCECPrivateKey) sender)))) {
-                    System.out.println("The owner is different!");
-                    return false;
+                    throw new CreateTransactionException("The owner is different!");
                 }
             } catch (NoSuchAlgorithmException e) {
                 e.printStackTrace();
@@ -81,7 +80,6 @@ public class TransactionUtil {
             TransactionInput txi = inputs.get(i);
             if(!CryptoUtil.verifyECDSASig(owner, TXID, CryptoUtil.hexStringToByteArray(txi.getSignature()))) {
                 System.out.println("The transaction input with index: " + i + " was modified!");
-                return false;
             }
         }
         return true;
@@ -548,7 +546,7 @@ public class TransactionUtil {
         }
 
         // verify if sender has enough funds to send
-        if(utxosToBeRemovedValue < value) throw new RuntimeException("Sender does not have enough funds");
+        if(utxosToBeRemovedValue < value) throw new CreateTransactionException("Sender does not have enough funds!");
 
         // create the TXI's
         List<TransactionInput> inputs = utxostoBeRemoved.stream().map(utxo -> new TransactionInput(utxo.getPreviousTx(),utxo.getIndex(),"")).collect(Collectors.toList());
@@ -645,8 +643,7 @@ public class TransactionUtil {
         Objects.requireNonNull(vNodes, "The list of Peers is null!");
 
         if(!verifyTransaction(transaction, blockchain, blockchain.size())) {
-            System.out.println("The transaction is invalid!");
-            return;
+            throw new CreateTransactionException("The transaction is invalid!");
         }
 
         unconfirmedTransactions.getTransactions().add(transaction);

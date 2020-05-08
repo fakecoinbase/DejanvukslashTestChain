@@ -41,7 +41,11 @@ class TransactionSend extends Component {
                 },
                 body: JSON.stringify(transactionPayload)
             }
-        ).then(() => {this.props.history.push("/");});
+        ).then(response => {
+            if(response.ok) this.props.history.push("/");
+            else console.log(response.json());
+        })
+        .catch(err => {console.log("err")});
     }
 
     render() {

@@ -6,6 +6,7 @@ import com.chain.api.core.Crypto.CryptoUtil;
 import com.chain.api.core.Net.CNode;
 import com.chain.api.core.Net.MiningTask;
 import com.chain.api.core.Transaction.*;
+import com.chain.api.core.Transaction.exceptions.CreateTransactionException;
 import com.chain.api.core.Wallet.WalletUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -145,8 +146,8 @@ public class TransactionTests {
         }
 
         // Send 6 coins to receiver when sender has only 5
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender), CryptoUtil.getStringFromKey(publicKeyReceiver),6,utxos,unconfirmedTransactionsSender.getTransactions(),0));
-        assertEquals("Sender does not have enough funds", exception.getMessage());
+        RuntimeException exception = assertThrows(CreateTransactionException.class, () -> TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender), CryptoUtil.getStringFromKey(publicKeyReceiver),6,utxos,unconfirmedTransactionsSender.getTransactions(),0));
+        assertEquals("Sender does not have enough funds!", exception.getMessage());
         assertTrue(unconfirmedTransactionsSender.getTransactions().size() == 0);
 
     }
@@ -287,9 +288,9 @@ public class TransactionTests {
         // modify  a TXI to refference a non-existent transaction
         inputs.add(new TransactionInput("trans3",0,""));
 
-        status = TransactionUtil.lockTransactionInputs(privateKeySender,inputs,txid,utxos);
+        RuntimeException exception = assertThrows(CreateTransactionException.class, () -> TransactionUtil.lockTransactionInputs(privateKeySender,inputs,txid,utxos));
+        assertEquals("Input doesn't match output!", exception.getMessage());
 
-        assertFalse(status);
 
         /*
          test the method that validates the inputs
@@ -297,7 +298,7 @@ public class TransactionTests {
 
         //trans3 has a null signature so it will throw a runtime error when we try to decode the signature
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> TransactionUtil.verifyTransactionInputs(publicKeySender,inputs,txid));
+        exception = assertThrows(RuntimeException.class, () -> TransactionUtil.verifyTransactionInputs(publicKeySender,inputs,txid));
         assertEquals("java.security.SignatureException: error decoding signature bytes.", exception.getMessage());
 
         inputs.remove(3); // remove the bad TXI and try again
