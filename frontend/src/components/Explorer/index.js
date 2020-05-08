@@ -79,7 +79,7 @@ class Explorer extends Component {
                                         <tr key={block.index}>
                                             <td><Link className="" to={"block/" + block.hash}>{block.index}</Link></td>
                                             <td><Link className="" to={"block/" + block.hash}>{block.hash.substring(0, 1) + "..." + block.hash.substring(20, 50) + '...'}</Link></td>
-                                            <td>{block.timestamp}</td>
+                                            <td>{new Date(block.timestamp).toUTCString()}</td>
                                             <td>{block.difficultyTarget}</td>
                                             <td>{block.transactions.length}</td>
                                         </tr>

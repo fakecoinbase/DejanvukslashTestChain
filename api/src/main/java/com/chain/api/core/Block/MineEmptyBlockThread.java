@@ -94,6 +94,7 @@ public class MineEmptyBlockThread implements Runnable  {
     }
 
     public MiningTask mineEmptyBlock() {
+        /*
         try {
             return BlockUtil.generateEmptyBlock(
                     blockchain.get(blockchain.size() - 1),
@@ -103,6 +104,27 @@ public class MineEmptyBlockThread implements Runnable  {
                     blockchain,
                     vNodes,
                     difficultyTarget);
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+        */
+
+        try {
+            return BlockUtil.generateBlockWithTransaction(
+                    blockchain.get(blockchain.size() - 1),
+                    CryptoUtil.getPublicKeyFromString(publicKey),
+                    unspentTransactionOutputs,
+                    blockchain.size(),
+                    unconfirmedTransactions.copyUnconfirmedTransactions(),
+                    unconfirmedTransactions.getTransactions(),
+                    blockchain,
+                    vNodes,
+                    difficultyTarget
+            );
         } catch (NoSuchProviderException e) {
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
