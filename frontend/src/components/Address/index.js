@@ -26,7 +26,7 @@ class Address extends Component {
     }
 
     async fetchUserTransactions(publicKey) {
-        await fetch('http://localhost:8080/address/' + publicKey, {
+        await fetch('http://localhost:8080/address/foo?walletPublicKey=' + publicKey, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',

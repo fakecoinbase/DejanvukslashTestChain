@@ -19,7 +19,7 @@ class Transaction extends Component {
 
         const outputsList = outputs.map((output,index) => (
             <li key={index}>
-                Receiver: <Link to={"/address/"+ output.to }>{output.to} </Link> {output.value} TC
+                Receiver: <Link to={"/address/"+ encodeURIComponent(output.to) }>{output.to} </Link> {output.value} TC
             </li>
         ));
 

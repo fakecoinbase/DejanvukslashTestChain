@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -100,6 +101,7 @@ public class WalletServiceImp implements WalletService {
         List<TransactionResponse> sentTransactions = new ArrayList<>();
         List<TransactionResponse> receivedTransactions = new ArrayList<>();
 
+        System.out.println(walletPublicKey);
 
         // skip the genesis block
         for(int i = 1; i < blockchain.size(); i++) {
