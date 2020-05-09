@@ -67,7 +67,7 @@ class TransactionDetails extends Component {
     
             const outputsList = transaction.outputs.map((output, index) => (
                 <li key={index}>
-                    Owner: {output.to + " "}
+                    Owner: <Link to={"/address/"+ encodeURIComponent(output.to) }> {output.to + " "} </Link>
                     Value: {output.value} TC
                 </li>
             ));

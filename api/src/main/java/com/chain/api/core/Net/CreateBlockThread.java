@@ -44,12 +44,14 @@ public class CreateBlockThread implements Runnable {
 
     @Override
     public void run() {
-        Block block = generateBlock(prevBlock, nodeOwnder, blockHeight, transactions);
 
-        // Increase the difficulty every 25 blocks mined
+        // Increase the difficulty and decrease reward every 25 blocks mined
+
         if(blockchain.size() >= difficultyTarget.get() * 25) {
             difficultyTarget.set(difficultyTarget.get() + 1);
         }
+
+        Block block = generateBlock(prevBlock, nodeOwnder, blockHeight, transactions, 50 / difficultyTarget.get());
 
         block.setDifficultyTarget(difficultyTarget.get());
 
@@ -74,11 +76,11 @@ public class CreateBlockThread implements Runnable {
         }
     }
 
-    private Block generateBlock(Block prevBlock, PublicKey nodeOwner, int blockHeight, List<Transaction> transactions) {
+    private Block generateBlock(Block prevBlock, PublicKey nodeOwner, int blockHeight, List<Transaction> transactions, float blockReward) {
         Block blockToBeMined = new Block(prevBlock, null);
 
         // add reward/coinbase  transaction to the miner's wallet
-        Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(nodeOwner),50, blockHeight);
+        Transaction coinbaseTransaction = TransactionUtil.createCoinbaseTransaction(CryptoUtil.getStringFromKey(nodeOwner),blockReward, blockHeight);
         blockToBeMined.addTransaction(coinbaseTransaction);
         if(transactions != null) blockToBeMined.getTransactions().addAll(transactions);
 

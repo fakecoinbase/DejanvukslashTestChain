@@ -649,7 +649,7 @@ public class TransactionUtil {
         unconfirmedTransactions.getTransactions().add(transaction);
 
         // if the block is full mine and send it to all peers
-        if(unconfirmedTransactions.getTransactions().size() >= 4) {
+        if(unconfirmedTransactions.getTransactions().size() >= 25) {
             // generate a new block with the unconfirmed transactions
             MiningTask miningTask= BlockUtil.generateBlockWithTransaction(
                     blockchain.get(blockchain.size() - 1),

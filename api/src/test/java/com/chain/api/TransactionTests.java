@@ -10,6 +10,7 @@ import com.chain.api.core.Transaction.exceptions.CreateTransactionException;
 import com.chain.api.core.Wallet.WalletUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
@@ -493,7 +494,7 @@ public class TransactionTests {
             e.printStackTrace();
         }
 
-        // mine 4 blocks
+        // mine 8 blocks
 
         for(int i = 0; i < 8; i++) {
             MiningTask miningTask = BlockUtil.generateEmptyBlock(blockchainFirstNode.get(blockchainFirstNode.size() - 1), publicKeySender, utxos,unconfirmedTransactionsSender.getTransactions(),blockchainFirstNode,vNodesFirstNode, difficultyTarget);
