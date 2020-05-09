@@ -26,13 +26,13 @@ button {
 
 
 #btnHomeRight {
-    background-color: rgb(242, 139, 36);
+    background-color: #B93A32;
 }
 
 div.statistics {
     clear:both;
     height: 125px;
-    background-color: rgb(19, 28, 50);
+    background-color: #034F84;
 }
 
 .wallets-statistics, .transactions-statistics, .blocks-statistics {

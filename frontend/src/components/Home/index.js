@@ -27,14 +27,14 @@ class Home extends Component {
         float: 'left',
         width: '50%',
         height: '300px',
-        backgroundColor: 'rgb(4, 13, 37)'
+        backgroundColor: '#92B6D5'
     };
 
     divStyleRight = {
         float: 'right',
         width: '50%',
         height: '300px',
-        backgroundColor: 'rgb(20, 70, 153)'
+        backgroundColor: '#92B6D5'
     };
 
     render() {
@@ -69,18 +69,7 @@ class Home extends Component {
                 </div>
                 <div className="statistics">
                     <div className="row">
-                        <div className="col-sm-4 text-center center-block wallets-statistics">
-                            <h5>Wallets</h5>
-                            <h3>7000</h3>
-                        </div>
-                        <div className="col-sm-4 text-center center-block transactions-statistics">
-                            <h5>Transactions</h5>
-                            <h3>500M+</h3>
-                        </div>
-                        <div className="col-sm-4 text-center center-block blocks-statistics">
-                            <h5>Blocks</h5>
-                            <h3>10B+</h3>
-                        </div>
+                        
                     </div>
                 </div>
                 <Explorer></Explorer>

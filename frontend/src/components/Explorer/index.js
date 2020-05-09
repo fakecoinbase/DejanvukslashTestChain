@@ -126,25 +126,8 @@ class Explorer extends Component {
                         <div className="col">
                             <h5 id="explorer-h5">Explorer</h5>
                         </div>
-                        <div className="col-9">
-                            <Form className="searchbar">
-                                <InputGroup className="mb-3">
-                                    <FormControl
-                                        placeholder="Search ..."
-                                        aria-label="Search "
-                                        aria-describedby="basic-addon2"
-                                    />
-                                    <DropdownButton id="dropdown-basic-button" title="Crypto">
-                                        <Dropdown.Item href="#/action-1">Testcoin</Dropdown.Item>
-                                        <Dropdown.Item href="#/action-2">Bitcoin</Dropdown.Item>
-                                        <Dropdown.Item href="#/action-3">Ethereum</Dropdown.Item>
-                                    </DropdownButton>
-                                    <Button id="search-button" variant="outline-secondary"> Search </Button>
-                                </InputGroup>
-                            </Form>
-
-                        </div>
                     </div>
+
                     <div className="row">
                         <div className="col">
                             <h5> Bitcoin </h5>

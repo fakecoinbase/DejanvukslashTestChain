@@ -36,7 +36,7 @@ class Transaction extends Component {
                 {/* add inputs */}
 
                 <div>
-                    Sender: { (sender === "") ? "COINBASE" : <Link to={"/address/"+ sender }> {sender} </Link>} 
+                    Sender: { (sender === "") ? "COINBASE" : <Link to={"/address/"+ encodeURIComponent(sender) }> {sender} </Link>} 
                     <ul>
                         { outputsList }
                     </ul>
