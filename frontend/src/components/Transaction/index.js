@@ -19,24 +19,24 @@ class Transaction extends Component {
 
         const outputsList = outputs.map((output,index) => (
             <li key={index}>
-                Receiver: <Link to={"/address/"+ encodeURIComponent(output.to) }>{output.to} </Link> {output.value} TC
+                <span className="tx-span">Receiver:</span> <Link to={"/address/"+ encodeURIComponent(output.to) }> {output.to.substring(0,3) + "..." + output.to.substring(output.to.length - 30, output.to.length)} </Link> {output.value} TC
             </li>
         ));
 
         return (
             <div className="transaction">
                 <div>
-                Txid: <Link to={"/tx/"+ txid} > {txid} </Link>
+                <span className="tx-span">Txid:</span> <Link to={"/tx/"+ txid} > {txid} </Link>
                 </div>
                     
                 <div>
-                Value: {(isSent != true) ? <span> - {value} </span> : <span> {value} </span>} 
+                <span className="tx-span">Value:</span> {(isSent != true) ? <span id="minus"> - {value} </span> : <span id="plus"> {value} </span>} 
                 </div>
 
                 {/* add inputs */}
 
                 <div>
-                    Sender: { (sender === "") ? "COINBASE" : <Link to={"/address/"+ encodeURIComponent(sender) }> {sender} </Link>} 
+                <span className="tx-span">Sender:</span> { (sender === "") ? "COINBASE" : <Link to={"/address/"+ encodeURIComponent(sender) }> {sender.substring(0, 3) + "..." + sender.substring(sender.length - 30, sender.length)} </Link>} 
                     <ul>
                         { outputsList }
                     </ul>

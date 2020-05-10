@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom';
 import './TxDetails.css';
 
 class TransactionDetails extends Component {
-    _jsMounted = false;
+    controller = new AbortController();
 
     constructor(props) {
         super(props);
@@ -23,25 +23,25 @@ class TransactionDetails extends Component {
     }
 
     componentDidMount() {
-        this._jsMounted = true;
         this.fetchTransactionData(this.props.match.params.txid);
         
     }
 
     componentWillUnmount() {
-        this._jsMounted = false;
+        this.controller.abort();
     }
 
 
     async fetchTransactionData(txid) {
         await fetch('http://localhost:8080/' + 'transaction/' + txid, {
+            signal: this.controller.signal,
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             }
         }).then(response => response.json()).then(transaction => {
-            if(this._jsMounted) this.setState({ transaction });
+           this.setState({ transaction });
         }).catch(error => {console.log("failed fetch")});
     }
 
@@ -55,26 +55,24 @@ class TransactionDetails extends Component {
 
         const { transaction } = this.state;
 
-        console.log(transaction);
-
         if(transaction != null) {
             const inputsList = transaction.inputs.map((input, index) => (
-                <li key={index}>
-                    Address: <Link to={"/tx/"+ input.previousTx} > {input.previousTx} </Link>
-                    Index: {input.index}
+                <li className="tx-detail-list" key={index}>
+                    <div>Index: {input.index}</div>
+                    <div>Address: <Link to={"/tx/"+ input.previousTx} > {input.previousTx} </Link></div>
                 </li>
             ));
     
             const outputsList = transaction.outputs.map((output, index) => (
-                <li key={index}>
-                    Owner: <Link to={"/address/"+ encodeURIComponent(output.to) }> {output.to + " "} </Link>
-                    Value: {output.value} TC
+                <li className="tx-detail-list" key={index}>
+                    <div>Owner: <Link to={"/address/"+ encodeURIComponent(output.to) }> {output.to + " "} </Link></div>
+                    <div>Value: <span id="plus"> {output.value} TC </span></div>
                 </li>
             ));
     
             return (
     
-                <div className="transaction">
+                <div className="">
     
                     <Form>
                         <Form.Group as={Row} controlId="formPlaintextTxid">
@@ -133,12 +131,14 @@ class TransactionDetails extends Component {
                         </Form.Group>
                     </Form>
 
-                    <h5>Inputs: </h5>
+                    <h5 >Inputs: </h5>
     
                     <ul>
                         {inputsList}
                     </ul>
     
+                    <hr></hr>
+
                     <h5>Outputs: </h5>
 
                     <ul>

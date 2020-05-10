@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 
 import BASE_URL from '../../Constants';
 
@@ -17,13 +17,12 @@ import Transaction from '../Transaction';
 import './Address.css';
 
 class Address extends Component {
+    controller = new AbortController();
+
     constructor(props) {
         super(props);
         this.state = {
-            userTransactions: {
-                sentTransactions: [],
-                receivedTransactions: []
-            },
+            userTransactions: null,
             currentPageSent: 1,
             currentPageReceived: 1
         }
@@ -42,12 +41,17 @@ class Address extends Component {
     }
 
 
-    componentWillMount() {
+    componentDidMount() {
         this.fetchUserTransactions(this.props.match.params.publicKey);
+    }
+
+    componentWillUnmount() {
+        this.controller.abort();
     }
 
     async fetchUserTransactions(publicKey) {
         await fetch('http://localhost:8080/address/foo?walletPublicKey=' + publicKey, {
+            signal: this.controller.signal,
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -59,12 +63,12 @@ class Address extends Component {
     }
 
     async componentDidUpdate(prevProps) {
-        if(prevProps.match.params.publicKey !== this.props.match.params.publicKey){
+        if (prevProps.match.params.publicKey !== this.props.match.params.publicKey) {
             await this.fetchUserTransactions(this.props.match.params.publicKey);
         }
     }
 
-    calculatePageTransaction(currentPage,nrPerPage,transactions) {
+    calculatePageTransaction(currentPage, nrPerPage, transactions) {
         const indexLastTx = currentPage * nrPerPage;
         const indexFirstTx = indexLastTx - nrPerPage;
         const currTxs = transactions.slice(indexFirstTx, indexLastTx);
@@ -75,55 +79,58 @@ class Address extends Component {
 
         const { userTransactions, currentPageSent, currentPageReceived } = this.state;
 
-        const currSentTxs = this.calculatePageTransaction(currentPageSent, 10, userTransactions.sentTransactions);
-        const currReceivedTxs = this.calculatePageTransaction(currentPageReceived, 10, userTransactions.receivedTransactions);
+        if (userTransactions != null) {
+            const currSentTxs = this.calculatePageTransaction(currentPageSent, 10, userTransactions.sentTransactions);
+            const currReceivedTxs = this.calculatePageTransaction(currentPageReceived, 10, userTransactions.receivedTransactions);
 
-        const sentTransactionRows = currSentTxs.map((tx, index) => 
-            <Transaction key={index} {...tx} isSent={false}></Transaction>
-        );
+            const sentTransactionRows = currSentTxs.map((tx, index) =>
+                <Transaction key={index} {...tx} isSent={false}></Transaction>
+            );
 
-        const receivedTransactionRows = currReceivedTxs.map((tx, index) => 
-            <Transaction key={index} {...tx} isSent={true}></Transaction>
-        );
+            const receivedTransactionRows = currReceivedTxs.map((tx, index) =>
+                <Transaction key={index} {...tx} isSent={true}></Transaction>
+            );
 
-        return (
-            <div className="address">
-                <Form>
-                    <Form.Group as={Row} controlId="formPlaintextIndex">
-                        <Form.Label column sm="2">
-                            Address:
+            return (
+                <div className="address">
+                    <Form>
+                        <Form.Group as={Row} controlId="formPlaintextIndex">
+                            <Form.Label column sm="2">
+                                Address:
                         </Form.Label>
-                        <Col sm="10">
-                            {this.props.match.params.publicKey}
-                        </Col>
-                    </Form.Group>
+                            <Col sm="10">
+                                {this.props.match.params.publicKey}
+                            </Col>
+                        </Form.Group>
 
-                    <Form.Group as={Row} controlId="formPlaintextIndex">
-                        <Form.Label column sm="2">
-                            Total balance:
+                        <Form.Group as={Row} controlId="formPlaintextIndex">
+                            <Form.Label column sm="2">
+                                Total balance:
                         </Form.Label>
-                        <Col sm="10">
-                            {userTransactions.totalBalance}
-                        </Col>
-                    </Form.Group>
-                </Form>
+                            <Col sm="10">
+                                {userTransactions.totalBalance}
+                            </Col>
+                        </Form.Group>
+                    </Form>
 
 
-                <h5 className="h5-user-transactions"> Sent Transactions </h5>
+                    <h5 className="h5-user-transactions"> Sent Transactions </h5>
 
-                <Pages currentPage={currentPageSent} perRow={10} transactionsLength={userTransactions.sentTransactions.length} handleClick={this.handleClickSent.bind(this)} ></Pages>
+                    <Pages currentPage={currentPageSent} perRow={10} transactionsLength={userTransactions.sentTransactions.length} handleClick={this.handleClickSent.bind(this)} ></Pages>
 
-                {sentTransactionRows}
+                    {sentTransactionRows}
 
 
-                <h5 className="h5-user-transactions"> Received Transactions </h5>
+                    <h5 className="h5-user-transactions"> Received Transactions </h5>
 
-                <Pages currentPage={currentPageReceived} perRow={10} transactionsLength={userTransactions.receivedTransactions.length} handleClick={this.handleClickReceived.bind(this)} ></Pages>
+                    <Pages currentPage={currentPageReceived} perRow={10} transactionsLength={userTransactions.receivedTransactions.length} handleClick={this.handleClickReceived.bind(this)} ></Pages>
 
-                {receivedTransactionRows}
-            </div>
+                    {receivedTransactionRows}
+                </div>
 
-        );
+            );
+        }
+        else return <div>LOADING</div>
     }
 }
 

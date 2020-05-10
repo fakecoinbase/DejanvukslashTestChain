@@ -5,3 +5,22 @@
   #unconfirmed-tx {
     color: #FF0000
   }
+
+  #plus {
+    color: #00cc00;
+    cursor: pointer;
+    padding: 0.25rem;
+    background: #e6ffe6;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #e6ffe6;
+    border-radius: 0.25rem;
+}
+
+.tx-detail-list {
+  max-width: fit-content
+}
+
+.tx-detail-list:hover {
+  background: #f2f2f2
+}

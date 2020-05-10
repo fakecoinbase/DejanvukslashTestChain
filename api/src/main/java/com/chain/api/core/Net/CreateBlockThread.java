@@ -47,7 +47,7 @@ public class CreateBlockThread implements Runnable {
 
         // Increase the difficulty and decrease reward every 25 blocks mined
 
-        if(blockchain.size() >= difficultyTarget.get() * 25) {
+        if(blockchain.size() >= Math.pow(25, difficultyTarget.get())) {
             difficultyTarget.set(difficultyTarget.get() + 1);
         }
 

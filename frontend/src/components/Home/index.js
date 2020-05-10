@@ -27,14 +27,14 @@ class Home extends Component {
         float: 'left',
         width: '50%',
         height: '300px',
-        backgroundColor: '#92B6D5'
+        //backgroundColor: '#92B6D5'
     };
 
     divStyleRight = {
         float: 'right',
         width: '50%',
         height: '300px',
-        backgroundColor: '#92B6D5'
+        //backgroundColor: '#92B6D5'
     };
 
     render() {
