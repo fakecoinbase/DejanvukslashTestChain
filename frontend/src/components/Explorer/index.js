@@ -69,7 +69,7 @@ class Explorer extends Component {
                                 <th>Hash</th>
                                 <th>Timestamp</th>
                                 <th>Difficulty</th>
-                                <th>Transaction nr</th>
+                                <th>Transactions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -108,7 +108,12 @@ class Explorer extends Component {
             );
         }
         else if (mode == 'difficulty') {
-
+            return (
+                <div id="difficulty-div">
+                    <h5> Difficulty </h5>
+                    <div> {blocks[blocks.length - 1].difficultyTarget} </div>
+                </div>
+            );
         }
         else if (mode == 'price') {
 

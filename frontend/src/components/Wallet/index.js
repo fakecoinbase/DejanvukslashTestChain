@@ -52,22 +52,22 @@ class Wallet extends Component {
         if (wallet != null) {
             return (
                 <div className="wallet">
-                    <Form className="block-form">
-                        <Form.Group as={Row} controlId="formPlaintextIndex">
+                    <Form className="wallet-form">
+                        <Form.Group as={Row} controlId="formPlaintextPrivateKey">
                             <Form.Label column sm="3">
                                 <span className="tx-span"> Private key: </span>
                             </Form.Label>
                             <Col sm="9">
-                                {wallet.privateKey}
+                            <span id="private-key-span"> {wallet.privateKey} </span>
                             </Col>
                         </Form.Group>
 
-                        <Form.Group as={Row} controlId="formPlaintextIndex">
+                        <Form.Group as={Row} controlId="formPlaintextPublicKey">
                             <Form.Label column sm="3">
                                 <span className="tx-span"> Public key: </span>
                             </Form.Label>
                             <Col sm="9">
-                                {wallet.publicKey}
+                            <span id="public-key-span"> {wallet.publicKey} </span>
                             </Col>
                         </Form.Group>
                     </Form>

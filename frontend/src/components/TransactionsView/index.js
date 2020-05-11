@@ -11,10 +11,12 @@ import { withRouter } from 'react-router-dom';
 import './TxView.css';
 
 class TransactionsView extends Component {
+    controller = new AbortController();
+
     constructor(props) {
         super(props);
         this.state = {
-            transactions: [],
+            transactions: null,
             currentPage: 1
         }
     }
@@ -25,8 +27,9 @@ class TransactionsView extends Component {
         });
     }
 
-    async componentWillMount() {
+    async componentDidMount() {
         await fetch(BASE_URL + 'transaction', {
+            signal: this.controller.signal,
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -37,33 +40,40 @@ class TransactionsView extends Component {
         });
     }
 
+    componentWillUnmount() {
+        this.controller.abort();
+    }
+
 
     render() {
 
         const { transactions, currentPage } = this.state;
-        
-        const indexLastTx = currentPage * 30;
-        const indexFirstTx = indexLastTx - 30;
-        const currTxs = transactions.slice(indexFirstTx, indexLastTx);
 
-        const txRows = currTxs.map((tx,index) =>
-            (
-                <Transaction key={index} {...tx}></Transaction>
+        if (transactions != null) {
+            const indexLastTx = currentPage * 30;
+            const indexFirstTx = indexLastTx - 30;
+            const currTxs = transactions.slice(indexFirstTx, indexLastTx);
+
+            const txRows = currTxs.map((tx, index) =>
+                (
+                    <Transaction key={index} {...tx}></Transaction>
+                )
             )
-        )
 
-        return (
-            <div className="transactions">
-                <div className="blockchain-table">
-                    <h5> Unconfirmed Transactions </h5>
+            return (
+                <div className="transactions">
+                    <div className="blockchain-table">
+                        <h5> Unconfirmed Transactions </h5>
 
-                    <Pages currentPage={currentPage} perRow = {30} transactionsLength={transactions.length} handleClick={this.handleClick.bind(this)}></Pages>
+                        <Pages currentPage={currentPage} perRow={30} transactionsLength={transactions.length} handleClick={this.handleClick.bind(this)}></Pages>
 
-                    {txRows}
+                        {txRows}
+                    </div>
+
                 </div>
-
-            </div>
-        );
+            );
+        }
+        else return <div> LOADING </div>
     }
 }
 

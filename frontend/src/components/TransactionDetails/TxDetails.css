@@ -24,3 +24,12 @@
 .tx-detail-list:hover {
   background: #f2f2f2
 }
+
+.tx {
+  margin: 10px 10px 10px 10px;
+}
+
+.tx-form {
+  margin: 20px auto;
+  max-width: fit-content;
+}

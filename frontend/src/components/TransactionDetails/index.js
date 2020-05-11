@@ -72,11 +72,11 @@ class TransactionDetails extends Component {
     
             return (
     
-                <div className="">
+                <div className="tx">
     
-                    <Form>
+                    <Form className="tx-form">
                         <Form.Group as={Row} controlId="formPlaintextTxid">
-                            <Form.Label column sm="2">
+                            <Form.Label className="tx-span" column sm="2">
                                 Txid: 
                             </Form.Label>
                             <Col sm="10">
@@ -85,7 +85,7 @@ class TransactionDetails extends Component {
                         </Form.Group>
     
                         <Form.Group as={Row} controlId="formPlaintextTxSender">
-                            <Form.Label column sm="2">
+                            <Form.Label className="tx-span" column sm="2">
                                 Sender: 
                             </Form.Label>
                             <Col sm="10">
@@ -94,7 +94,7 @@ class TransactionDetails extends Component {
                         </Form.Group>
     
                         <Form.Group as={Row} controlId="formPlaintextTxReceiver">
-                            <Form.Label column sm="2">
+                            <Form.Label className="tx-span" column sm="2">
                                 Receiver: 
                             </Form.Label>
                             <Col sm="10">
@@ -103,7 +103,7 @@ class TransactionDetails extends Component {
                         </Form.Group>
     
                         <Form.Group as={Row} controlId="formPlaintextTxValue">
-                            <Form.Label column sm="2">
+                            <Form.Label className="tx-span" column sm="2">
                                 Value: 
                             </Form.Label>
                             <Col sm="10">
@@ -112,7 +112,7 @@ class TransactionDetails extends Component {
                         </Form.Group>
     
                         <Form.Group as={Row} controlId="formPlaintextTxVerified">
-                            <Form.Label column sm="2">
+                            <Form.Label className="tx-span" column sm="2">
                                 Verified: 
                             </Form.Label>
                             <Col sm="10">
@@ -121,7 +121,7 @@ class TransactionDetails extends Component {
                         </Form.Group>
     
                         <Form.Group as={Row} controlId="formPlaintextTxOwner">
-                            <Form.Label column sm="2">
+                            <Form.Label className="tx-span"  column sm="2">
                                 Included in block: 
                             </Form.Label>
                             <Col sm="10">

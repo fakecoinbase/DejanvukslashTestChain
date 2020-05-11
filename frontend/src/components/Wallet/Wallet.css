@@ -1,0 +1,15 @@
+.wallet-form {
+    width: 1000px;
+    margin: 20px auto;
+    overflow-wrap: break-word;
+}
+
+#private-key-span {
+    max-width: fit-content;
+
+}
+
+#public-key-span {
+    max-width: fit-content;
+    
+}
