@@ -1,16 +1,24 @@
-FROM node:10 
+FROM node:10 as frontend-prod
  
 WORKDIR /usr/src/app
  
 COPY package*.json ./
- 
+
 RUN npm install
- 
+
 COPY . .
  
-EXPOSE 3000
+RUN npm run-script build
  
-CMD [ "npm", "start" ]
+
+FROM nginx:alpine
+
+COPY --from=frontend-prod /usr/src/app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+
 
 
 
