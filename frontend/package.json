@@ -33,7 +33,7 @@
     "webpack-dev-server": "^3.9.0"
   },
   "scripts": {
-    "start": "webpack-dev-server --open --port 3000 --compress --mode development",
+    "start": "webpack-dev-server --open --port 3000 --compress --mode development --host 0.0.0.0",
     "dev": "webpack --mode development --progress",
     "build": "webpack --mode production --progress"
   },
