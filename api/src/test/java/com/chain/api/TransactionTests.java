@@ -513,13 +513,13 @@ public class TransactionTests {
             assertTrue(unconfirmedTransactionsSender.getTransactions().size() == 1);
 
             for(int j = 0; j < 2; j++) {
-                Transaction trans2 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 50, utxos,unconfirmedTransactionsSender.getTransactions(), blockchainFirstNode.size());
+                Transaction trans2 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 5, utxos,unconfirmedTransactionsSender.getTransactions(), blockchainFirstNode.size());
                 TransactionUtil.handleTransaction(trans2, blockchainFirstNode, utxos, unconfirmedTransactionsSender, miningTaskListFirstNode, publicKeySender, vNodesFirstNode, difficultyTarget);
             }
 
             assertTrue(unconfirmedTransactionsSender.getTransactions().size() == 3);
 
-            Transaction trans3 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 50, utxos,unconfirmedTransactionsSender.getTransactions(), blockchainFirstNode.size());
+            Transaction trans3 = TransactionUtil.createTransaction(CryptoUtil.getStringFromKey(privateKeySender),CryptoUtil.getStringFromKey(publicKeyReceiver), 5, utxos,unconfirmedTransactionsSender.getTransactions(), blockchainFirstNode.size());
             TransactionUtil.handleTransaction(trans3, blockchainFirstNode, utxos, unconfirmedTransactionsSender, miningTaskListFirstNode, publicKeySender, vNodesFirstNode, difficultyTarget);
 
             miningTaskListFirstNode.get(1).getThread().join();

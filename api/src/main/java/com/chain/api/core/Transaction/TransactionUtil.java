@@ -642,6 +642,8 @@ public class TransactionUtil {
         Objects.requireNonNull(publicKey, "Public Key is null!");
         Objects.requireNonNull(vNodes, "The list of Peers is null!");
 
+        final Integer MAX_BLOCK_SIZE = 5;
+
         if(!verifyTransaction(transaction, blockchain, blockchain.size())) {
             throw new CreateTransactionException("The transaction is invalid!");
         }
@@ -649,7 +651,7 @@ public class TransactionUtil {
         unconfirmedTransactions.getTransactions().add(transaction);
 
         // if the block is full mine and send it to all peers
-        if(unconfirmedTransactions.getTransactions().size() >= 2500) {
+        if(unconfirmedTransactions.getTransactions().size() >= MAX_BLOCK_SIZE - 1) {
             // generate a new block with the unconfirmed transactions
             MiningTask miningTask= BlockUtil.generateBlockWithTransaction(
                     blockchain.get(blockchain.size() - 1),
