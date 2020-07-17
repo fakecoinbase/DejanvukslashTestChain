@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  docker:
+     # Starts a Docker daemon at the DNS name "docker"
+     image: docker:dind
+     privileged: yes
+     volumes:
+       - "/home:/home"
+       - "jenkins-docker-certs:/certs/client"
+       - "jenkins-data:/var/jenkins_home"
+     environment:
+        # DOCKER_TLS_CERTDIR defaults to "/certs
+       - DOCKER_TLS_CERTDIR=/certs
+     networks:
+       - jenkins-network
+
+  jenkins-ci:
+    image: jenkinsci/blueocean
+    environment:
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_TLS_VERIFY=1
+      - DOCKER_HOST=tcp://docker:2376
+    volumes:
+      - "/home:/home"
+      - "jenkins-docker-certs:/certs/client:ro"
+      - "jenkins-data:/var/jenkins_home"
+    networks:
+      - jenkins-network
+    ports:
+      # 8080 on host already taken by the backend
+      - "8000:8080"
+
+volumes:
+  jenkins-docker-certs:
+  jenkins-data:
+
+networks:
+  jenkins-network:
+

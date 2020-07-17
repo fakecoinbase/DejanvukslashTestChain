@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  jenkins-ci:
+    image: jenkinsci/blueocean
+    volumes:
+      - "jenkins-data:/var/jenkins_home"
+      - "/home:/home"
+	  - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - jenkins-network
+    ports:
+      # 8080 on host already taken by the backend
+      - "8000:8080"
+      - "50000:50000"
+
+volumes:
+  jenkins-docker-certs:
+  jenkins-data:
+
+networks:
+  jenkins-network:
+    name: jenkins-network
