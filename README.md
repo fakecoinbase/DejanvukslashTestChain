@@ -41,8 +41,6 @@ tens of minutes to complete which would've exponentially slowed the development.
 
 ## Running Tests
 
-Change the value of MAX_BLOCK_SIZE from TransactionUtil on line 645 from 2500 to 5 before
-
 ```
 mvn test
 ```
